@@ -60,7 +60,7 @@ Future<String> sendDataServer() async {
   final String guid = Guid.newGuid.toString();
   Map data = {
     'Command': 'RegisterCheck',
-    'NumDevice': '1',
+    'NumDevice': '4',
     'Timeout': 30,
     'IdCommand': guid,
     'IsFiscalCheck': true,
@@ -167,7 +167,7 @@ class _HomePageState extends State<HomePage> {
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: GridView.builder(
                                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: 300,
+                                    maxCrossAxisExtent: 450,
                                     childAspectRatio: 3 / 2,
                                     crossAxisSpacing: 10,
                                     mainAxisExtent: 400,
@@ -238,7 +238,9 @@ class _HomePageState extends State<HomePage> {
                                             ),
                                             child: InkWell(
                                               onTap: (){
+                                                sendDataServer().then((res) => {
 
+                                                });
                                               },
                                               child: Center(child: Text('закончилось', style: TextStyle(color: Colors.white,), textAlign: TextAlign.center,),),
                                             )

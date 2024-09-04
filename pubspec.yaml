@@ -58,7 +58,7 @@ msix_config:
   display_name: Flutter App
   publisher_display_name: BoKiosk
   identity_name: jecheck.ru.bokiosk
-  msix_version: 1.1.0.0
+  msix_version: 1.4.0.0
   certificate_path: C:\CERTIFICATE.pfx
   certificate_password: 1234
   capabilities: internetClient, location, microphone, webcam

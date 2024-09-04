@@ -1,6 +1,16 @@
+import 'dart:io';
+
 import 'package:bokiosk/pages/HomePage.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
+
+class MyHttpOverrides extends HttpOverrides{
+  @override
+  HttpClient createHttpClient(SecurityContext? context){
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +28,7 @@ void main() async {
     await windowManager.setFullScreen(true);
   });
 
+  HttpOverrides.global = MyHttpOverrides();
   runApp(const MyApp());
 }
 
