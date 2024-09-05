@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bokiosk/models/MenuModel.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_guid/flutter_guid.dart';
@@ -7,7 +8,15 @@ import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-Future<List<dynamic>> getMenus(String menuId, String orgId) async {
+
+
+List<MenuModel> parseGetPayment(String responseBody) {
+  final parsed = jsonDecode(responseBody).cast<Map<String, dynamic>>();
+
+  return parsed.map<MenuModel>((json) => MenuModel.fromJson(json)).toList();
+}
+
+Future<List<MenuModel>> getMenus(String menuId, String orgId) async {
 
   Map data = {
     'menuId': menuId,
@@ -25,34 +34,7 @@ Future<List<dynamic>> getMenus(String menuId, String orgId) async {
 
   print(response.body);
 
-  List<dynamic> responseMap = json.decode(response.body);
-
-  responseMap.sort((a, b) {
-    return a['name'].toLowerCase().compareTo(b['name'].toLowerCase());
-  });
-
-  return responseMap;
-
-  //
-  // Map data = {
-  //   'restId': '',
-  // };
-  //
-  // var body = json.encode(data);
-  //
-  // final response = await http
-  //     .get(Uri.parse('https://new.procob.io/api/boapp/getMenuForDepartment'),
-  //   headers: {"Content-Type": "application/x-www-form-urlencoded"},);
-  //
-  // List<dynamic> responseMap = json.decode(response.body);
-  //
-  // responseMap.sort((a, b) {
-  //   return a['name'].toLowerCase().compareTo(b['name'].toLowerCase());
-  // });
-  //
-  // print(responseMap);
-  //
-  // return responseMap;
+  return parseGetPayment(response.body);
 }
 
 
@@ -111,21 +93,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  Future<List<dynamic>>? _listFuture;
+  Future<List<MenuModel>>? _listFuture;
   List<dynamic>? newOrder;
-  int sumOrder = 0;
+  num sumOrder = 0;
   @override
   void initState() {
     super.initState();
     // initial load
-    _listFuture = getMenus('18419', '7ae08cea-95e9-4136-a746-ed0fe8077770');
+    _listFuture = getMenus('31481', '7ae08cea-95e9-4136-a746-ed0fe8077770');
   }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.yellow.shade100,
+      backgroundColor: Color(0xFFEEEDED),
       body: Stack(
         children: [
           Positioned(
@@ -134,7 +116,6 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: MediaQuery.of(context).size.width * 0.99,
               height: MediaQuery.of(context).size.height * 0.99,
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
               child: SingleChildScrollView(
                 child: Column(
                   children: [
@@ -152,179 +133,269 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     SizedBox(height: 30,),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.99,
-                      height: 50,
-                      child: Text('Основное', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),),
-                    ),
                     SizedBox(height: 30,),
-                    FutureBuilder<List<dynamic>>(
+                    FutureBuilder<List<MenuModel>>(
                       future: _listFuture,
                       builder: (context, snapshot){
                         if(snapshot.hasData){
-                          return Container(
-                            width: MediaQuery.of(context).size.width * 0.99,
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: GridView.builder(
-                                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: 450,
-                                    childAspectRatio: 3 / 2,
-                                    crossAxisSpacing: 10,
-                                    mainAxisExtent: 400,
-                                    mainAxisSpacing: 20),
-                                // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                //   crossAxisCount: 3,
-                                //   crossAxisSpacing: 10,
-                                //   mainAxisExtent: 256,
-                                // ),
-                                itemCount: snapshot.data!.length,
-                                physics: const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemBuilder: (context, index){
-                                  return Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                                    height: 320,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: Colors.white,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.5),
-                                          spreadRadius: 4,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 3), // changes position of shadow
-                                        ),
-                                      ],
-                                      // gradient: LinearGradient(
-                                      //   begin: Alignment.centerLeft,
-                                      //   end: Alignment.centerRight,
-                                      //   colors: [
-                                      //     Color(0xFF17181B),
-                                      //     Color(0xFF17181B),
-                                      //   ],
+                          return ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: snapshot.data!.length,
+                            itemBuilder: (context, groupIndex){
+                              return Column(
+                                children: <Widget>[
+                                  Container(
+                                    width: MediaQuery.of(context).size.width * 0.99,
+                                    child: Text(snapshot.data![groupIndex].name, style: TextStyle(fontFamily: 'Montserrat-Regular', fontSize: 24),),
+                                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                                  ),
+                                  GridView.builder(
+                                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                          maxCrossAxisExtent: 450,
+                                          childAspectRatio: 3 / 2,
+                                          crossAxisSpacing: 10,
+                                          mainAxisExtent: 470,
+                                          mainAxisSpacing: 10),
+                                      // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      //   crossAxisCount: 3,
+                                      //   crossAxisSpacing: 10,
+                                      //   mainAxisExtent: 256,
                                       // ),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        snapshot.data![index]['itemSizes'][0]['buttonImageUrl'] != null ? Container(
-                                          height: 260,
+                                      itemCount: snapshot.data![groupIndex].items.length,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      shrinkWrap: true,
+                                      itemBuilder: (context, index){
+                                        return Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                                          margin: EdgeInsets.symmetric(horizontal: 5),
+                                          height: 350,
                                           decoration: BoxDecoration(
-                                            image: DecorationImage(image: CachedNetworkImageProvider(snapshot.data![index]['itemSizes'][0]['buttonImageUrl']),
-                                                fit: BoxFit.cover),
                                             borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ) : Container(
-                                          height: 260,
-                                          decoration: BoxDecoration(
-                                            image: DecorationImage(image: CachedNetworkImageProvider("https://archive.org/download/no-photo-available/no-photo-available.png"),
-                                                fit: BoxFit.cover),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        SizedBox(height: 5,),
-                                        MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![index]['itemSizes'][0]['prices'][0]['price'].toString(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 24, color: Colors.red),),),
-                                        SizedBox(height: 5,),
-                                        // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
-                                        MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 24, color: Colors.red))),
-                                        SizedBox(height: 10,),
-                                        snapshot.data![index]['stopList'] ? Container(
-                                            height: 30,
-                                            width: 200,
-                                            decoration: BoxDecoration(
-                                              color: Color(0xFF2E2F36),
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: InkWell(
-                                              onTap: (){
-                                                sendDataServer().then((res) => {
-
-                                                });
-                                              },
-                                              child: Center(child: Text('закончилось', style: TextStyle(color: Colors.white,), textAlign: TextAlign.center,),),
-                                            )
-                                        ) :
-                                        snapshot.data![index]['count'] == 0 ?
-                                        Container(
-                                            height: 30,
-                                            width: 200,
-                                            decoration: BoxDecoration(
-                                              color: Color(0xFF2E2F36),
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: InkWell(
-                                              onTap: (){
-                                                setState(() {
-                                                  snapshot.data![index]['count'] += 1;
-                                                  int newSum = 0;
-                                                  snapshot.data!.forEach((element) {
-                                                    if(element['count'] > 0){
-                                                      int ssum = element['count'] * element['itemSizes'][0]['prices'][0]['price'];
-                                                      newSum += ssum;
-                                                    }
-                                                  });
-                                                  sumOrder = newSum;
-                                                  newOrder = snapshot.data!;
-                                                });
-                                              },
-                                              child: Center(child: Text('в корзину', style: TextStyle(color: Colors.white,), textAlign: TextAlign.center,),),
-                                            )
-                                        ) :
-                                        Container(
-                                          height: 30,
-                                          width: 200,
-                                          padding: EdgeInsets.symmetric(horizontal: 3),
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFF2E2F36),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              InkWell(
-                                                onTap: (){
-                                                  setState(() {
-                                                    snapshot.data![index]['count'] -= 1;
-                                                    int newSum = 0;
-                                                    snapshot.data!.forEach((element) {
-                                                      if(element['count'] > 0){
-                                                        int ssum = element['count'] * element['itemSizes'][0]['prices'][0]['price'];
-                                                        newSum += ssum;
-                                                      }
-                                                    });
-                                                    sumOrder = newSum;
-                                                    newOrder = snapshot.data!;
-                                                  });
-                                                },
-                                                child: Icon(Icons.remove, color: Colors.white, size: 18,),
-                                              ),
-                                              Text(snapshot.data![index]['count'].toString(), style: TextStyle(color: Colors.white),),
-                                              InkWell(
-                                                onTap: (){
-                                                  setState(() {
-                                                    snapshot.data![index]['count'] += 1;
-                                                    int newSum = 0;
-                                                    snapshot.data!.forEach((element) {
-                                                      if(element['count'] > 0){
-                                                        int ssum = element['count'] * element['itemSizes'][0]['prices'][0]['price'];
-                                                        newSum += ssum;
-                                                      }
-                                                    });
-                                                    sumOrder = newSum;
-                                                    newOrder = snapshot.data!;
-                                                  });
-                                                },
-                                                child: Icon(Icons.add, color: Colors.white, size: 18,),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Color(0xFFE8E0DD),
+                                                spreadRadius: 8,
+                                                blurRadius: 20,
+                                                offset: Offset(-2, 4), // changes position of shadow
                                               ),
                                             ],
+                                            // gradient: LinearGradient(
+                                            //   begin: Alignment.centerLeft,
+                                            //   end: Alignment.centerRight,
+                                            //   colors: [
+                                            //     Color(0xFF17181B),
+                                            //     Color(0xFF17181B),
+                                            //   ],
+                                            // ),
                                           ),
-                                        )
-                                      ],
-                                    ),
-                                  );
-                                }
-                            ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl != '' ? Container(
+                                                height: 280,
+                                                decoration: BoxDecoration(
+                                                  image: DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
+                                                      fit: BoxFit.cover),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                              ) : Container(
+                                                height: 260,
+                                                decoration: BoxDecoration(
+                                                  image: DecorationImage(image: CachedNetworkImageProvider("https://archive.org/download/no-photo-available/no-photo-available.png"),
+                                                      fit: BoxFit.cover),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              SizedBox(height: 5,),
+                                              // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
+                                              MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].name,
+                                                  style: TextStyle(fontWeight: FontWeight.w200, fontSize: 24, color: Colors.red, fontFamily: 'Montserrat-Medium'))),
+                                              SizedBox(height: 5,),
+                                              // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
+                                              MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesPrices[0].price.toString(),
+                                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 24, color: Colors.red, fontFamily: 'Montserrat-Regular'),),),
+                                              SizedBox(height: 5,),
+                                              // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
+                                              MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].itemSizes[0].portionWeightGrams.toStringAsFixed(0) + ' г',
+                                                style: TextStyle(fontWeight: FontWeight.w400, fontSize: 14, color: Colors.black, fontFamily: 'Montserrat-Regular'),),),
+                                              SizedBox(height: 2,),
+                                              snapshot.data![groupIndex].items[index].stopList ? Container(
+                                                  height: 30,
+                                                  width: 200,
+                                                  decoration: BoxDecoration(
+                                                    color: Color(0xFF2E2F36),
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: InkWell(
+                                                    onTap: (){
+                                                      sendDataServer().then((res) => {
+
+                                                      });
+                                                    },
+                                                    child: Center(child: Text('закончилось', style: TextStyle(color: Colors.white,), textAlign: TextAlign.center,),),
+                                                  )
+                                              ) :
+                                              Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                                child: Row(
+                                                  children: <Widget>[
+                                                    Container(
+                                                      width: 60,
+                                                      height: 60,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(10),
+                                                        border: Border.all(color: Colors.black)
+                                                      ),
+                                                      child: Icon(Icons.remove),
+                                                    ),
+                                                    Container(
+                                                      child: Text(snapshot.data![groupIndex].items[index].count.toString(), style: TextStyle(fontSize: 50),),
+                                                    ),
+                                                    InkWell(
+                                                      onTap: (){
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return  SafeArea(
+                                                              child: Container(
+                                                                  padding: EdgeInsets.all(0) ,
+                                                                  child: Dialog(
+                                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                                                                      child: Container(
+                                                                          width: 700,
+                                                                          child: Column(
+                                                                              mainAxisAlignment: MainAxisAlignment.start,
+                                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                                              children:[
+                                                                                Container(
+                                                                                  decoration: BoxDecoration(
+                                                                                    image: DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
+                                                                                        fit: BoxFit.cover),
+                                                                                    borderRadius: BorderRadius.circular(2),
+                                                                                  ),
+                                                                                  width: 700,
+                                                                                  height: 500,
+                                                                                ),
+                                                                                MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].name,
+                                                                                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 24, color: Colors.red, fontFamily: 'Montserrat-Medium'))),
+                                                                                SizedBox(height: 5,),
+                                                                                // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
+                                                                                MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesPrices[0].price.toString(),
+                                                                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 24, color: Colors.red, fontFamily: 'Montserrat-Regular'),),),
+                                                                                SizedBox(height: 5,),
+                                                                                // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
+                                                                                MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].itemSizes[0].portionWeightGrams.toStringAsFixed(0) + ' г',
+                                                                                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 14, color: Colors.black, fontFamily: 'Montserrat-Regular'),),),
+                                                                              ]
+                                                                          )
+                                                                      )
+                                                                  )
+                                                              ),
+                                                            );
+                                                          },
+                                                        );
+                                                      },
+                                                      child:  Container(
+                                                        width: 60,
+                                                        height: 60,
+                                                        decoration: BoxDecoration(
+                                                            borderRadius: BorderRadius.circular(10),
+                                                            border: Border.all(color: Color(0xFFE86A44)),
+                                                            color: Colors.red
+                                                        ),
+                                                        child: Icon(Icons.add, color: Colors.white,),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                ),
+                                              ),
+                                              // snapshot.data![groupIndex].items[index].count == 0 ?
+                                              // Container(
+                                              //     height: 30,
+                                              //     width: 200,
+                                              //     decoration: BoxDecoration(
+                                              //       color: Color(0xFF2E2F36),
+                                              //       borderRadius: BorderRadius.circular(10),
+                                              //     ),
+                                              //     child: InkWell(
+                                              //       onTap: (){
+                                              //         setState(() {
+                                              //           snapshot.data![groupIndex].items[index].count += 1;
+                                              //           num newSum = 0;
+                                              //           snapshot.data![groupIndex].items.forEach((element) {
+                                              //             if(element.count > 0){
+                                              //               num ssum = element.count * element.itemSizes[0].itemSizesPrices[0].price;
+                                              //               newSum += ssum;
+                                              //             }
+                                              //           });
+                                              //           sumOrder = newSum;
+                                              //           newOrder = snapshot.data!;
+                                              //         });
+                                              //       },
+                                              //       child: Center(child: Text('в корзину', style: TextStyle(color: Colors.white,), textAlign: TextAlign.center,),),
+                                              //     )
+                                              // ) :
+                                              // Container(
+                                              //   height: 30,
+                                              //   width: 200,
+                                              //   padding: EdgeInsets.symmetric(horizontal: 3),
+                                              //   decoration: BoxDecoration(
+                                              //     color: Color(0xFF2E2F36),
+                                              //     borderRadius: BorderRadius.circular(10),
+                                              //   ),
+                                              //   child: Row(
+                                              //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              //     children: [
+                                              //       InkWell(
+                                              //         onTap: (){
+                                              //           setState(() {
+                                              //             snapshot.data![groupIndex].items[index].count -= 1;
+                                              //             num newSum = 0;
+                                              //             snapshot.data![groupIndex].items.forEach((element) {
+                                              //               if(element.count > 0){
+                                              //                 num ssum = element.count * element.itemSizes[0].itemSizesPrices[0].price;
+                                              //                 newSum += ssum;
+                                              //               }
+                                              //             });
+                                              //             sumOrder = newSum;
+                                              //             newOrder = snapshot.data!;
+                                              //           });
+                                              //         },
+                                              //         child: Icon(Icons.remove, color: Colors.white, size: 18,),
+                                              //       ),
+                                              //       Text(snapshot.data![groupIndex].items[index].count.toString(), style: TextStyle(color: Colors.white),),
+                                              //       InkWell(
+                                              //         onTap: (){
+                                              //           setState(() {
+                                              //             snapshot.data![groupIndex].items[index].count += 1;
+                                              //             num newSum = 0;
+                                              //             snapshot.data![groupIndex].items.forEach((element) {
+                                              //               if(element.count > 0){
+                                              //                 num ssum = element.count * element.itemSizes[0].itemSizesPrices[0].price;
+                                              //                 newSum += ssum;
+                                              //               }
+                                              //             });
+                                              //             sumOrder = newSum;
+                                              //             newOrder = snapshot.data!;
+                                              //           });
+                                              //         },
+                                              //         child: Icon(Icons.add, color: Colors.white, size: 18,),
+                                              //       ),
+                                              //     ],
+                                              //   ),
+                                              // )
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                  )
+                                ],
+                              );
+                            }
                           );
                         } else if (snapshot.hasError){
                           return Center(child: Text(snapshot.error.toString(), style: TextStyle(color: Colors.white),));
