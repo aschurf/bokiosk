@@ -168,6 +168,8 @@ class MenuItemSizeModifiersItems {
   String name;
   String description;
   String itemId;
+  String buttonImageUrl;
+  bool isChecked;
   List<MenuItemSizeModifiersItemPrices> enuItemSizeModifiersItemPrice;
 
   MenuItemSizeModifiersItems({
@@ -175,7 +177,9 @@ class MenuItemSizeModifiersItems {
     required this.name,
     required this.description,
     required this.itemId,
+    required this.buttonImageUrl,
     required this.enuItemSizeModifiersItemPrice,
+    required this.isChecked,
   });
 
   factory MenuItemSizeModifiersItems.fromJson(Map<String, dynamic> json) {
@@ -193,6 +197,8 @@ class MenuItemSizeModifiersItems {
       name: json['name'],
       description: json['description'],
       itemId: json['itemId'],
+      isChecked: false,
+      buttonImageUrl: json['buttonImageUrl'] ?? '',
       enuItemSizeModifiersItemPrice: enuItemSizeModifiersItemPr,
     );
   }

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bokiosk/pages/HomePage.dart';
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
 class MyHttpOverrides extends HttpOverrides{
@@ -14,6 +15,7 @@ class MyHttpOverrides extends HttpOverrides{
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   // Must add this line.
   await windowManager.ensureInitialized();
 
