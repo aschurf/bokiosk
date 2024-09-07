@@ -84,6 +84,7 @@ flutter:
   assets:
     - assets/images/
     - assets/fonts/
+    - assets/videos/
 
   fonts:
     - family: Montserrat-Bold

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:bokiosk/pages/HomePage.dart';
+import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: WelcomePage(),
     );
   }
 }
