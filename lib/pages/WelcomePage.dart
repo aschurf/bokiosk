@@ -1,4 +1,5 @@
 import 'package:bokiosk/pages/HomePage.dart';
+import 'package:bokiosk/pages/OrderTypeSelect.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -23,15 +24,21 @@ class _WelcomePageState extends State<WelcomePage> {
     super.initState();
     final playable = Playlist(
       [
-        Media('assets/videos/1v3.mp4'),
-        Media('assets/videos/2v3.mp4'),
-        Media('assets/videos/4v3.mp4'),
+        Media('asset:///assets/videos/1v3.mp4'),
+        Media('asset:///assets/videos/2v3.mp4'),
+        Media('asset:///assets/videos/4v3.mp4'),
       ],
     );
 
     player.open(playable);
     st();
 
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    super.dispose();
   }
 
   void st() async {
@@ -47,7 +54,7 @@ class _WelcomePageState extends State<WelcomePage> {
         Navigator.push(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => HomePage(),
+            pageBuilder: (_, __, ___) => OrderTypeSelect(),
             transitionDuration: Duration(milliseconds: 500),
             transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
           ),

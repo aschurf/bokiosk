@@ -7,6 +7,8 @@ import 'package:bokiosk/models/OrderDishesModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 
+import 'WelcomePage.dart';
+
 Future<String> sendDataServer() async {
   final String guid = Guid.newGuid.toString();
   Map data = {
@@ -69,7 +71,17 @@ class _PayOrderState extends State<PayOrder> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    sendDataServer();
+    sendDataServer().then((res){
+      toWelcome();
+    });
+  }
+
+  void toWelcome(){
+    Future((){
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => WelcomePage()
+      ));
+    });
   }
 
   @override

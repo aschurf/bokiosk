@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:bokiosk/models/MenuModel.dart';
 import 'package:bokiosk/models/OrderDishesModel.dart';
 import 'package:bokiosk/pages/ViewOrder.dart';
+import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_guid/flutter_guid.dart';
@@ -90,7 +91,8 @@ Future<String> sendDataServer() async {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  String menuId;
+  HomePage({Key? key, required this.menuId}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -114,7 +116,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     // initial load
-    _listFuture = getMenus('31481', '7ae08cea-95e9-4136-a746-ed0fe8077770');
+    _listFuture = getMenus(widget.menuId, '7ae08cea-95e9-4136-a746-ed0fe8077770');
     // player.open(Media('https://user-images.githubusercontent.com/28951144/229373695-22f88f13-d18f-4288-9bf1-c3e078d83722.mp4'));
 
   }
@@ -150,6 +152,11 @@ class _HomePageState extends State<HomePage> {
         });
         stater();
         Navigator.pop(context);
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => WelcomePage()
+            ));
       },
     );
 
@@ -183,8 +190,8 @@ class _HomePageState extends State<HomePage> {
         child: Stack(
           children: [
             Positioned(
-              top: 0,
-              left: 0,
+              top: 50,
+              left: 5,
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.99,
                 height: MediaQuery.of(context).size.height * 0.99,
@@ -196,7 +203,7 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             width: 100,
                             height: 100,
-                            child: Image.asset('assets/images/logo.jpeg'),
+                            child: Image.asset('assets/images/logo2.png'),
                           ),
                           Container(
                             width: 50,
@@ -219,8 +226,8 @@ class _HomePageState extends State<HomePage> {
                                     children: <Widget>[
                                       Container(
                                         width: MediaQuery.of(context).size.width * 0.99,
-                                        child: Text(snapshot.data![groupIndex].name, style: TextStyle(fontFamily: 'Montserrat-Regular', fontSize: 24, color: Colors.white),),
-                                        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                                        child: Text(snapshot.data![groupIndex].name, style: TextStyle(fontFamily: 'Montserrat-ExtraBold', fontSize: 45, color: Colors.white),),
+                                        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 30),
                                       ),
                                       GridView.builder(
                                           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -287,11 +294,11 @@ class _HomePageState extends State<HomePage> {
                                                                               style: TextStyle(fontWeight: FontWeight.w200, fontSize: 32, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraLight', shadows: [
                                                                               ]))),
                                                                           SizedBox(height: 30,),
-                                                                          Text('Дополнительно',
+                                                                          snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0 ? Text('Дополнительно',
                                                                               style: TextStyle(fontWeight: FontWeight.w200, fontSize: 32, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-Bold', shadows: [
-                                                                              ])),
-                                                                          SizedBox(height: 30,),
-                                                                          Container(
+                                                                              ])) : Container(),
+                                                                          snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0 ?  SizedBox(height: 30,) : Container(),
+                                                                          snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0 ?  Container(
                                                                             width: MediaQuery.of(context).size.width * 0.99,
                                                                             height: 650,
                                                                             child: GridView.builder(
@@ -355,7 +362,7 @@ class _HomePageState extends State<HomePage> {
                                                                                 );
                                                                               },
                                                                             ),
-                                                                          )
+                                                                          ) : Container()
                                                                         ],
                                                                       )
                                                                   ),
@@ -366,15 +373,17 @@ class _HomePageState extends State<HomePage> {
                                                                   right: 0,
                                                                   child: InkWell(
                                                                     onTap: (){
-                                                                      snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
-                                                                        setState((){
-                                                                          if(element.isChecked){
-                                                                            element.isChecked = false;
-                                                                            dopPosSum -= element.enuItemSizeModifiersItemPrice[0].price;
-                                                                          }
-                                                                          dishCounter = 1;
+                                                                      if(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0){
+                                                                        snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
+                                                                          setState((){
+                                                                            if(element.isChecked){
+                                                                              element.isChecked = false;
+                                                                              dopPosSum -= element.enuItemSizeModifiersItemPrice[0].price;
+                                                                            }
+                                                                            dishCounter = 1;
+                                                                          });
                                                                         });
-                                                                      });
+                                                                      }
                                                                       Navigator.pop(context);
                                                                     },
                                                                     child: Container(
@@ -475,14 +484,16 @@ class _HomePageState extends State<HomePage> {
                                                                                 InkWell(
                                                                                   onTap: (){
                                                                                     List<OrderDishesModifiersModel> modifiersModel = [];
-                                                                                    snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
-                                                                                      if(element.isChecked){
-                                                                                        modifiersModel.add(OrderDishesModifiersModel(
-                                                                                            name: element.name,
-                                                                                            id: element.itemId,
-                                                                                            price: element.enuItemSizeModifiersItemPrice[0].price));
-                                                                                      }
-                                                                                    });
+                                                                                    if(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0){
+                                                                                      snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
+                                                                                        if(element.isChecked){
+                                                                                          modifiersModel.add(OrderDishesModifiersModel(
+                                                                                              name: element.name,
+                                                                                              id: element.itemId,
+                                                                                              price: element.enuItemSizeModifiersItemPrice[0].price));
+                                                                                        }
+                                                                                      });
+                                                                                    }
                                                                                     setState((){
                                                                                       orderDishes.add(OrderDishesModel(
                                                                                           name: snapshot.data![groupIndex].items[index].name,
@@ -494,15 +505,18 @@ class _HomePageState extends State<HomePage> {
                                                                                       fullSumOrder = 0;
                                                                                     });
 
-                                                                                    snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
-                                                                                      setState((){
-                                                                                        if(element.isChecked){
-                                                                                          element.isChecked = false;
-                                                                                          dopPosSum -= element.enuItemSizeModifiersItemPrice[0].price;
-                                                                                        }
-                                                                                        dishCounter = 1;
+                                                                                    if( snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0){
+                                                                                      snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
+                                                                                        setState((){
+                                                                                          if(element.isChecked){
+                                                                                            element.isChecked = false;
+                                                                                            dopPosSum -= element.enuItemSizeModifiersItemPrice[0].price;
+                                                                                          }
+                                                                                          dishCounter = 1;
+                                                                                        });
                                                                                       });
-                                                                                    });
+                                                                                    }
+
                                                                                     Navigator.pop(context);
 
                                                                                     orderDishes.forEach((elementOrder){
