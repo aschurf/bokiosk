@@ -37,7 +37,6 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   void dispose() {
-    player.dispose();
     super.dispose();
   }
 
@@ -51,7 +50,8 @@ class _WelcomePageState extends State<WelcomePage> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: (){
-        Navigator.push(
+        player.dispose();
+        Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => OrderTypeSelect(),
@@ -81,7 +81,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.red,
+                    color: Color(0xFFDBD200),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black12,
@@ -93,7 +93,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   ),
                   child: Center(
                     child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Закажите здесь',
-                        style: TextStyle(fontWeight: FontWeight.w200, fontSize: 70, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
+                        style: TextStyle(fontWeight: FontWeight.w200, fontSize: 70, color: Colors.red, fontFamily: 'Montserrat-ExtraBold', shadows: [
                         ]))),
                   )
               ),

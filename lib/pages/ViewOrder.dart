@@ -1,7 +1,10 @@
+import 'package:bokiosk/controllers/KkmServerController.dart';
 import 'package:bokiosk/models/OrderDishesModel.dart';
 import 'package:bokiosk/pages/PayOrder.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:galileo_sqljocky5/public/connection/connection.dart';
+import 'package:mysql_client/mysql_client.dart';
 
 class ViewOrder extends StatefulWidget {
   List<OrderDishesModel> orderDishes;
@@ -199,7 +202,7 @@ class _ViewOrderState extends State<ViewOrder> {
               child:  Row(
                 children: [
                   InkWell(
-                    onTap: (){
+                    onTap: () async {
                       Navigator.pop(context, {
                         "dishesOrder": widget.orderDishes
                       });
@@ -226,6 +229,7 @@ class _ViewOrderState extends State<ViewOrder> {
                   SizedBox(width: 80,),
                   InkWell(
                     onTap: (){
+
                       Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -239,8 +243,7 @@ class _ViewOrderState extends State<ViewOrder> {
                       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.white30),
-                        color: Color(0xFF42413D),
+                        color: Color(0xFFD72314),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

@@ -7,57 +7,13 @@ import 'package:bokiosk/models/OrderDishesModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 
+import '../controllers/KkmServerController.dart';
 import 'WelcomePage.dart';
-
-Future<String> sendDataServer() async {
-  final String guid = Guid.newGuid.toString();
-  Map data = {
-    'Command': 'RegisterCheck',
-    'NumDevice': '4',
-    'Timeout': 30,
-    'IdCommand': guid,
-    'IsFiscalCheck': false,
-    'TypeCheck': 2,
-    'NotPrint': false,
-    'NumberCopies': 2,
-    'CashierName': 'Иванов А.В.',
-    'CashierVATIN': '772577978824',
-    'TaxVariant': '',
-    'CorrectionType': 1,
-    'CorrectionBaseDate': '2024-09-02T15:30:30',
-    'CorrectionBaseNumber': 'MOS-4516',
-    'CheckStrings': [
-      {
-        'PrintText': {
-          //При вставке в текст символов ">#10#<" строка при печати выровнеется по центру, где 10 - это на сколько меньше станет строка ККТ
-          'Text': ">#2#<ООО \"Рога и копыта\"",
-          'Font': 1,
-        },
-      }
-    ],
-    'Cash': 800,
-    'ElectronicPayment': 0.01,
-    'AdvancePayment': 0.02,
-    'CashProvision': 0.04,
-    'Credit': 0.03,
-    'Amount': 1.21,
-  };
-
-  var body = json.encode(data);
-
-  final response = await http
-      .post(Uri.parse('http://localhost:5894/Execute'),
-      headers: {"Content-Type": "application/json"},
-      body: body);
-
-  print(response);
-
-  return 'ok';
-}
 
 
 class PayOrder extends StatefulWidget {
   List<OrderDishesModel> orderDishes;
+
   PayOrder({Key? key, required this.orderDishes}) : super(key: key);
 
   @override
@@ -67,13 +23,195 @@ class PayOrder extends StatefulWidget {
 
 class _PayOrderState extends State<PayOrder> {
 
+  String errorMsg = "";
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    sendDataServer().then((res){
+    preparePayment().then((res){
       toWelcome();
+    }).catchError((error){
+        setState(() {
+          errorMsg = error;
+        });
     });
+  }
+
+  Future<String> preparePayment () async {
+    int counterCheck = 1;
+    num sumOrd = 0;
+    List<Map> strings = [];
+    List<Map> checkInfo = [];
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<ООО \"БУНБОНАМБО\"",
+        "Font": 1,
+      }
+    });
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<Кассовый чек",
+        "Font": 2,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "",
+      }
+    });
+
+    widget.orderDishes.forEach((dish){
+      checkInfo.add({
+        "PrintText": {
+          "Text": dish.dishCount.toString() + " " + dish.name + "<#0#>" + dish.price.toString() + ".00 * " + dish.dishCount.toString() + " шт. = " + (dish.dishCount * dish.price).toString() + ".00",
+          "Font": 3,
+        }
+      });
+      //Регистрация чека в ОФД
+      strings.add({
+        "Register": {
+          "Name": dish.name,
+          "Quantity": dish.dishCount,
+          "Price": dish.price,
+          "Amount": dish.price * dish.dishCount,
+          "Department": 1,
+          "Tax": -1,
+          "SignMethodCalculation": 4,
+          "SignCalculationObject": 1,
+          "MeasureOfQuantity": 0,
+        }
+      });
+
+      checkInfo.add({
+        "PrintText": {
+          "Text": "НДС не облагается",
+        }
+      });
+      checkInfo.add({
+        "PrintText": {
+          "Text": "",
+        }
+      });
+      counterCheck++;
+      sumOrd += dish.dishCount * dish.price;
+      dish.modifiers.forEach((modifierInd){
+        checkInfo.add({
+          "PrintText": {
+            "Text": dish.dishCount.toString() + ". " + modifierInd.name + "<#0#>" + modifierInd.price.toString() + ".00 * " + dish.dishCount.toString() + " шт. = " + (dish.dishCount * modifierInd.price).toString() + ".00",
+            "Font": 3,
+          }
+        });
+
+        //Регистрация чека в ОФД
+        strings.add({
+          "Register": {
+            "Name": modifierInd.name,
+            "Quantity": dish.dishCount,
+            "Price": modifierInd.price,
+            "Amount": modifierInd.price * dish.dishCount,
+            "Department": 1,
+            "Tax": -1,
+            "SignMethodCalculation": 4,
+            "SignCalculationObject": 1,
+            "MeasureOfQuantity": 0,
+          }
+        });
+
+        checkInfo.add({
+          "PrintText": {
+            "Text": "НДС не облагается",
+          }
+        });
+        checkInfo.add({
+          "PrintText": {
+            "Text": "",
+          }
+        });
+        counterCheck++;
+        sumOrd += modifierInd.price * dish.dishCount;
+      });
+    });
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "ИТОГ <#0#>=" + sumOrd.toString() + ".00",
+        "Font": 1,
+        "Intensity": 1,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "СУММА БЕЗ НДС <#0#>=" + sumOrd.toString() + ".00",
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "БЕЗНАЛИЧНЫМИ <#0#>=" + sumOrd.toString() + ".00",
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НОМЕР УСТРОЙСТВА <#20#>00001427",
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "ООО \"БУНБОНАМБО\"",
+        "Font": 3,
+        "Intensity": 15,
+      }
+    });
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": "77-Г.Москва, 115191,Мытная ул,д.74,пав 26",
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Место расчетов <#0#>77-Г.Москва, 115191,Мытная ул,д.74,пав 26",
+        "Font": 3,
+      }
+    });
+
+    await PayAndRegister(0, strings, checkInfo, sumOrd, widget.orderDishes).then((resp){
+
+    }).catchError((error){
+      throw(error);
+    });
+
+    return 'ok';
   }
 
   void toWelcome(){
@@ -102,7 +240,7 @@ class _PayOrderState extends State<PayOrder> {
               ),
             ),
           ),
-          Positioned(
+          errorMsg == "" ? Positioned(
             top: 700,
             left: 0,
             child: Container(
@@ -112,8 +250,8 @@ class _PayOrderState extends State<PayOrder> {
                   child: CircularProgressIndicator(color: Colors.white,),
                 )
             ),
-          ),
-          Positioned(
+          ) : Container(),
+          errorMsg == "" ? Positioned(
             top: 900,
             left: 0,
             child: Container(
@@ -122,6 +260,16 @@ class _PayOrderState extends State<PayOrder> {
               child: Center(
                 child: Text('Следуйте указаниям на терминале', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 35, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-Regular')),
               )
+            ),
+          ) : Positioned(
+            top: 900,
+            left: 0,
+            child: Container(
+                width: MediaQuery.of(context).size.width * 0.999,
+                height: 600,
+                child: Center(
+                  child: Text(errorMsg, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 40, color: Colors.red, fontFamily: 'Montserrat-Regular'), textAlign: TextAlign.center,),
+                )
             ),
           )
         ],

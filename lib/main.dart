@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:bokiosk/controllers/KkmServerController.dart';
+import 'package:bokiosk/pages/AdminPage.dart';
 import 'package:bokiosk/pages/HomePage.dart';
+import 'package:bokiosk/pages/PinCodePage.dart';
 import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:mysql_client/mysql_client.dart';
 import 'package:window_manager/window_manager.dart';
 
 class MyHttpOverrides extends HttpOverrides{
@@ -32,23 +37,80 @@ void main() async {
   });
 
   HttpOverrides.global = MyHttpOverrides();
-  runApp(const MyApp());
+
+  var kk = await GetDataKKT();
+  var js = json.decode(kk);
+  String code = "";
+  if(js['Info']['SessionState'] == 2){
+    final conn = await MySQLConnection.createConnection(
+      host: "192.168.0.153",
+      port: 3306,
+      userName: "kiosk_user",
+      password: "Iehbr201010",
+      databaseName: "kiosk", // optional
+    );
+
+    await conn.connect();
+
+    var result = await conn.execute('SELECT * FROM shifts WHERE session_number = :sNumber',
+        {
+          'sNumber': js['SessionNumber'],
+        });
+
+
+    print(result.numOfRows);
+
+    for (final re in result.rows) {
+      print('MySQL result');
+      code = re.colByName("shift_code")!;
+    }
+
+    await conn.close();
+  }
+
+  runApp(MyApp(kktData: kk, code: code, kkmState: js,));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  String kktData;
+  String code;
+  Map<String, dynamic> kkmState;
+  MyApp({super.key, required this.kktData, required this.code, required this.kkmState});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: WelcomePage(),
-    );
+    var js = json.decode(kktData);
+    if(js['Info']['SessionState'] == 2){
+      return MaterialApp(
+        title: 'Flutter Demo',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: WelcomePage(),
+      );
+    } else if(js['Info']['SessionState'] == 1){
+      return MaterialApp(
+        title: 'Flutter Demo',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: AdminPage(),
+      );
+    } else {
+      return MaterialApp(
+        title: 'Flutter Demo',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: WelcomePage(),
+      );
+    }
   }
 }

@@ -66,7 +66,7 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
                           height: 500,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            color: Color(0xFF242424),
+                            color: Color(0xFFDB3C33),
                           ),
                           child: Center(
                             child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('В зале',
@@ -88,7 +88,7 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
                         height: 500,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Color(0xFF242424),
+                          color: Color(0xFFDB3C33),
                         ),
                         child: Center(
                           child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('C собой',

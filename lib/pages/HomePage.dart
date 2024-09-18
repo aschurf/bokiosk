@@ -3,6 +3,8 @@ import 'dart:developer';
 
 import 'package:bokiosk/models/MenuModel.dart';
 import 'package:bokiosk/models/OrderDishesModel.dart';
+import 'package:bokiosk/pages/AdminPage.dart';
+import 'package:bokiosk/pages/PinCodePage.dart';
 import 'package:bokiosk/pages/ViewOrder.dart';
 import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -11,6 +13,9 @@ import 'package:flutter_guid/flutter_guid.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:mysql_client/mysql_client.dart';
+
+import '../controllers/KkmServerController.dart';
 
 
 
@@ -193,10 +198,48 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            child: Image.asset('assets/images/logo2.png'),
+                          GestureDetector(
+                            onDoubleTap: () async {
+                              var kk = await GetDataKKT();
+                              var js = json.decode(kk);
+                              String code = "";
+                              final conn = await MySQLConnection.createConnection(
+                                host: "192.168.0.153",
+                                port: 3306,
+                                userName: "kiosk_user",
+                                password: "Iehbr201010",
+                                databaseName: "kiosk", // optional
+                              );
+
+                              await conn.connect();
+
+                              var result = await conn.execute('SELECT * FROM shifts WHERE session_number = :sNumber and kkm_command = :command',
+                                  {
+                                    'sNumber': js['SessionNumber'],
+                                    'command': 'OpenShift',
+                                  });
+
+
+                              print(result.numOfRows);
+
+                              for (final re in result.rows) {
+                                print('MySQL result');
+                                code = re.colByName("shift_code")!;
+                              }
+
+                              await conn.close();
+
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => PinCodePage(code: code)
+                                  ));
+                            },
+                            child: Container(
+                              width: 100,
+                              height: 100,
+                              child: Image.asset('assets/images/logo2.png'),
+                            ),
                           ),
                           Container(
                             width: 50,
@@ -591,7 +634,8 @@ class _HomePageState extends State<HomePage> {
                                                       height: 380,
                                                       width: 500,
                                                       decoration: BoxDecoration(
-                                                        image: DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
+                                                        image: snapshot.data![groupIndex].items[index].stopList ? DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
+                                                            fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.grey, BlendMode.saturation)) : DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
                                                             fit: BoxFit.cover),
                                                         borderRadius: BorderRadius.circular(6),
                                                       ),
@@ -603,8 +647,18 @@ class _HomePageState extends State<HomePage> {
                                                           children: [
                                                             SizedBox(height: 2,),
                                                             // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
+                                                            snapshot.data![groupIndex].items[index].stopList ? MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Будет позже',
+                                                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 30, color: Colors.red, fontFamily: 'Montserrat-ExtraBold', shadows: [
+                                                                  Shadow(
+                                                                    offset: Offset(1, 1),
+                                                                    blurRadius: 5.0,
+                                                                    color: Color.fromARGB(255, 0, 0, 0),
+                                                                  ),
+                                                                ]))) : Container(),
+                                                            SizedBox(height: 2,),
+                                                            // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
                                                             MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].name,
-                                                                style: TextStyle(fontWeight: FontWeight.w200, fontSize: 24, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
+                                                                style: TextStyle(fontWeight: FontWeight.w200, fontSize: 25, color: Colors.white, fontFamily: 'Montserrat-ExtraBold', shadows: [
                                                                   Shadow(
                                                                     offset: Offset(1, 1),
                                                                     blurRadius: 5.0,
