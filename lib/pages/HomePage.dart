@@ -15,6 +15,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:mysql_client/mysql_client.dart';
 
+import '../constants.dart';
 import '../controllers/KkmServerController.dart';
 
 
@@ -284,7 +285,7 @@ class _HomePageState extends State<HomePage> {
                               var js = json.decode(kk);
                               String code = "";
                               final conn = await MySQLConnection.createConnection(
-                                host: "192.168.0.153",
+                                host: mySqlServer,
                                 port: 3306,
                                 userName: "kiosk_user",
                                 password: "Iehbr201010",

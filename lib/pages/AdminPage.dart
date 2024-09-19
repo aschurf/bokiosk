@@ -245,14 +245,14 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     )
                   ),
-                  InkWell(
-                    onTap: () async {
-                      EasyLoading.show(status: 'выключение киоска...');
-                      var cleanProcess = await Process.run('shutdown', ["-s"]);
-                    },
-                    child: Positioned(
-                      top: 950,
-                      left: 0,
+                  Positioned(
+                    top: 950,
+                    left: 0,
+                    child: InkWell(
+                      onTap: () async {
+                        EasyLoading.show(status: 'выключение киоска...');
+                        var cleanProcess = await Process.run('shutdown', ["-s"]);
+                      },
                       child: Container(
                         margin: EdgeInsets.symmetric(horizontal: 50),
                         width: 950,
@@ -277,7 +277,7 @@ class _AdminPageState extends State<AdminPage> {
                               ]))),
                         ),
                       ),
-                    ),
+                    )
                   ),
                   Positioned(
                     top: 1600,

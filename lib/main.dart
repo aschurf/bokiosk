@@ -12,6 +12,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:mysql_client/mysql_client.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'constants.dart';
+
 class MyHttpOverrides extends HttpOverrides{
   @override
   HttpClient createHttpClient(SecurityContext? context){
@@ -44,7 +46,7 @@ void main() async {
   String code = "";
   if(js['Info']['SessionState'] == 2){
     final conn = await MySQLConnection.createConnection(
-      host: "192.168.0.153",
+      host: mySqlServer,
       port: 3306,
       userName: "kiosk_user",
       password: "Iehbr201010",

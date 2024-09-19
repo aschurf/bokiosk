@@ -230,7 +230,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   if(respBody['Error'] == ""){
     //ОПлата прошла успешно
     final conn = await MySQLConnection.createConnection(
-      host: "192.168.0.153",
+      host: mySqlServer,
       port: 3306,
       userName: "kiosk_user",
       password: "Iehbr201010",
@@ -294,7 +294,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
   if(respBodyOfd['Error'] == ""){
     final conn = await MySQLConnection.createConnection(
-      host: "192.168.0.153",
+      host: mySqlServer,
       port: 3306,
       userName: "kiosk_user",
       password: "Iehbr201010",
@@ -346,7 +346,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
   //Сделать номер заказа
   final conn = await MySQLConnection.createConnection(
-    host: "192.168.0.153",
+    host: mySqlServer,
     port: 3306,
     userName: "kiosk_user",
     password: "Iehbr201010",
@@ -524,7 +524,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
   if(respBodyCheckPrint['Error'] == ""){
     final conn = await MySQLConnection.createConnection(
-      host: "192.168.0.153",
+      host: mySqlServer,
       port: 3306,
       userName: "kiosk_user",
       password: "Iehbr201010",
@@ -609,7 +609,7 @@ Future<String> PrintCheck(int typeCheck, List<Map> checkStrings, num sumOrd) asy
   print(respBodyY);
 
   final conn = await MySQLConnection.createConnection(
-    host: "192.168.0.153",
+    host: mySqlServer,
     port: 3306,
     userName: "kiosk_user",
     password: "Iehbr201010",
@@ -673,7 +673,7 @@ Future<String> OpenShift() async {
 
 
   final conn = await MySQLConnection.createConnection(
-    host: "192.168.0.153",
+    host: mySqlServer,
     port: 3306,
     userName: "kiosk_user",
     password: "Iehbr201010",
@@ -854,7 +854,7 @@ Future<String> CloseShift() async {
   print(responseEkv.body);
 
   final conn = await MySQLConnection.createConnection(
-    host: "192.168.0.153",
+    host: mySqlServer,
     port: 3306,
     userName: "kiosk_user",
     password: "Iehbr201010",

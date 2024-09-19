@@ -9,12 +9,13 @@ import 'package:mysql_client/mysql_client.dart';
 
 import 'package:bokiosk/pages/HistoryPayments.dart';
 
+import '../constants.dart';
 import 'KkmServerController.dart';
 
 
 Future<String> returnPayByCheckNumber(int checkNumber) async {
   final conn = await MySQLConnection.createConnection(
-    host: "192.168.0.153",
+    host: mySqlServer,
     port: 3306,
     userName: "kiosk_user",
     password: "Iehbr201010",
@@ -44,7 +45,7 @@ Future<String> returnPayByCheckNumber(int checkNumber) async {
 
   if(statusOfPayment == 1){
     final conn = await MySQLConnection.createConnection(
-      host: "192.168.0.153",
+      host: mySqlServer,
       port: 3306,
       userName: "kiosk_user",
       password: "Iehbr201010",
@@ -183,7 +184,7 @@ Future<String> returnPayByCheckNumber(int checkNumber) async {
 
     await returnPayment(strings, checkInfo, sumOrd, universalId).then((res) async {
       final conn = await MySQLConnection.createConnection(
-        host: "192.168.0.153",
+        host: mySqlServer,
         port: 3306,
         userName: "kiosk_user",
         password: "Iehbr201010",
@@ -217,7 +218,7 @@ Future<List<PaymentsModel>> getPayments() async {
 
   if(js['Info']['SessionState'] == 2){
     final conn = await MySQLConnection.createConnection(
-      host: "192.168.0.153",
+      host: mySqlServer,
       port: 3306,
       userName: "kiosk_user",
       password: "Iehbr201010",
