@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:bokiosk/pages/HistoryPayments.dart';
 import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../controllers/KkmServerController.dart';
 
@@ -86,10 +88,12 @@ class _AdminPageState extends State<AdminPage> {
                     left: 0,
                     child: kkmState['Info']['SessionState'] == 1 ? InkWell(
                       onTap: (){
+                        EasyLoading.show(status: 'подождите...');
                         OpenShift().then((res){
                           setState(() {
 
                           });
+                          EasyLoading.dismiss();
                         });
                       },
                       child: Container(
@@ -146,10 +150,13 @@ class _AdminPageState extends State<AdminPage> {
                     left: 0,
                     child: kkmState['Info']['SessionState'] == 2 || kkmState['Info']['SessionState'] == 3  ? InkWell(
                       onTap: (){
+                        EasyLoading.show(status: 'подождите...');
                         CloseShift().then((res){
+                          EasyLoading.dismiss();
                           setState(() {
 
                           });
+                          EasyLoading.showSuccess('Смена успешно закрыта');
                         });
                       },
                       child: Container(
@@ -238,31 +245,37 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     )
                   ),
-                  Positioned(
-                    top: 950,
-                    left: 0,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 50),
-                      width: 950,
-                      height: 100,
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Color(0xFF54534F)),
-                        color: Color(0xFF54534F),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            spreadRadius: 2,
-                            blurRadius: 10,
-                            offset: Offset(0, 0), // changes position of shadow
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Выключить устройство',
-                            style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
-                            ]))),
+                  InkWell(
+                    onTap: () async {
+                      EasyLoading.show(status: 'выключение киоска...');
+                      var cleanProcess = await Process.run('shutdown', ["-s"]);
+                    },
+                    child: Positioned(
+                      top: 950,
+                      left: 0,
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 50),
+                        width: 950,
+                        height: 100,
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Color(0xFF54534F)),
+                          color: Color(0xFF54534F),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              spreadRadius: 2,
+                              blurRadius: 10,
+                              offset: Offset(0, 0), // changes position of shadow
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Выключить устройство',
+                              style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
+                              ]))),
+                        ),
                       ),
                     ),
                   ),

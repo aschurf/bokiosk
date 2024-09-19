@@ -7,6 +7,7 @@ import 'package:bokiosk/pages/HomePage.dart';
 import 'package:bokiosk/pages/PinCodePage.dart';
 import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:mysql_client/mysql_client.dart';
 import 'package:window_manager/window_manager.dart';
@@ -90,6 +91,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: WelcomePage(),
+        builder: EasyLoading.init(),
       );
     } else if(js['Info']['SessionState'] == 1){
       return MaterialApp(
@@ -100,6 +102,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: AdminPage(),
+        builder: EasyLoading.init(),
       );
     } else {
       return MaterialApp(
@@ -110,6 +113,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: WelcomePage(),
+        builder: EasyLoading.init(),
       );
     }
   }
