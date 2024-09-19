@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-
+import 'package:intl/intl.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'dart:async';
 import 'dart:io';
@@ -11,7 +11,200 @@ import '../constants.dart';
 import '../models/OrderDishesModel.dart';
 
 
-Future<String> PayAndRegister(int typeCheck, List<Map> checkStrings, List<Map> checkInfo, num sumOrd, List<OrderDishesModel> orderDishes) async {
+Future<Map> getFiscalInfo(int checkNumber) async {
+  //Получить данные фискального чека по его номеру
+  final String opGuid = Guid.newGuid.toString();
+  Map data = {
+    'Command': 'GetDataCheck',
+    'IdCommand': opGuid,
+    'NumDevice': numDeviceKkm,
+    'FiscalNumber': checkNumber,
+  };
+
+  var body = json.encode(data);
+
+  print(body);
+
+  final response = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: body);
+
+  final respBody = json.decode(response.body);
+  final respBodyY = json.encode(respBody);
+  print(respBodyY);
+
+  return respBody;
+}
+
+Future<String> returnPayment (List<Map> checkStrings, List<Map> checkInfo, num sumOrd, String UniversalID) async {
+  //Вернуть платеж по карте
+  final String opGuid = Guid.newGuid.toString();
+  Map data = {
+    'Command': 'ReturnPaymentByPaymentCard',
+    'IdCommand': opGuid,
+    'NumDevice': numDeviceEkvaring,
+    'Amount': sumOrd,
+    'UniversalID': UniversalID,
+  };
+
+  var body = json.encode(data);
+
+  print(body);
+
+  final response = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: body);
+
+  final respBody = json.decode(response.body);
+  final respBodyY = json.encode(respBody);
+  print(respBodyY);
+
+  if(respBody['Error'] == ""){
+
+  } else {
+    throw("Ошибка возврата платежа " + respBody['Error']);
+  }
+
+
+  //Зарегистрировать возврат в ОФД
+  final String guidOfd = Guid.newGuid.toString();
+  Map dataOfd = {
+    'Command': 'RegisterCheck',
+    'IdCommand': guidOfd,
+    'NumDevice': numDeviceKkm,
+    'Timeout': 60,
+    'IsFiscalCheck': true,
+    // Тип чека, Тег 1054;
+    // 0 – продажа/приход;                                      10 – покупка/расход;
+    // 1 – возврат продажи/прихода;                             11 - возврат покупки/расхода;
+    // 2 – корректировка продажи/прихода;                       12 – корректировка покупки/расхода;
+    // 3 – корректировка возврата продажи/прихода; (>=ФФД 1.1)  13 – корректировка возврата покупки/расхода; (>=ФФД 1.1)
+    'TypeCheck': 1,
+    'NotPrint': false,
+    'NumberCopies': 2,
+    'CashierName': 'Иванов А.В.',
+    'CashierVATIN': '772577978824',
+    // Если надо одновременно автоматически провести транзакцию через эквайринг
+    // Эквайринг будет задействован если: 1. чек фискальный, 2. оплата по "ElectronicPayment" не равна 0, 3. PayByProcessing = true
+    // Использовать эквайринг: Null - из настроек на сервере, false - не будет, true - будет
+    'PayByProcessing': false, //В тестовом чеке автоматический эквайринг выключен
+    'NumDeviceByProcessing': numDeviceEkvaring,
+    'ReceiptNumber': "TEST-01", // Номер чека для эквайринга
+    'PrintSlipAfterCheck': true, // Печатать Слип-чек после чека (а не в чеке)
+    'Cash': 0, // Наличная оплата (2 знака после запятой), Тег 1031
+    'ElectronicPayment': sumOrd.toInt(), // Сумма электронной оплаты (2 знака после запятой), Тег 1081
+    'AdvancePayment': 0, // Сумма из предоплаты (зачетом аванса) (2 знака после запятой), Тег 1215
+    'Credit': 0, // Сумма постоплатой(в кредит) (2 знака после запятой), Тег 1216
+    'CashProvision': 0, // Сумма оплаты встречным предоставлением (сертификаты, др. мат.ценности) (2 знака после запятой), Тег 1217
+    'CheckStrings': checkStrings
+  };
+
+  var bodyOfd = json.encode(dataOfd);
+
+  final responseOfd = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: bodyOfd);
+
+  final respBodyOfd = json.decode(responseOfd.body);
+  final respBodyYOfd = json.encode(respBodyOfd);
+  print(respBodyYOfd);
+
+  if(respBodyOfd['Error'] == ""){
+
+  } else {
+    throw("Ошибка ККТ " + respBodyOfd['Error'] == "");
+  }
+
+  Map fisInfo = await getFiscalInfo(respBodyOfd['CheckNumber']);
+  String dateTimeString = fisInfo['RegisterCheck']['FiscalDate'];
+  final dateTime = DateTime.parse(dateTimeString);
+  final format = DateFormat('dd.MM.yy H:m');
+  final clockString = format.format(dateTime);
+
+  //Распечатать чек возврата
+  checkInfo.add({
+    "PrintText": {
+      "Text": clockString,
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ВОЗВРАТ",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "РН ККТ 0008341297005706",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ЗН ККТ 00107600577322",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ИНН 9723088772",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ФН 7384440800018563",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ФД " + fisInfo['RegisterCheck']['FiscalNumber'],
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ФП " + fisInfo['RegisterCheck']['FiscalSign'],
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "BarCode": {
+      "BarcodeType": "QR",
+      "Barcode": fisInfo['QRCode'],
+    }
+  });
+
+  //Распечатать чек
+  final String guidCheckPrint = Guid.newGuid.toString();
+  Map dataCheckPrint = {
+    'Command': 'PrintDocument',
+    'IdCommand': guidCheckPrint,
+    'NumDevice': numDevicePrinter,
+    'Timeout': 60,
+    'CheckStrings': checkInfo,
+  };
+
+  var bodyCheckPrint = json.encode(dataCheckPrint);
+
+  final responseCheckPrint = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: bodyCheckPrint);
+
+  final respBodyCheckPrint = json.decode(responseCheckPrint.body);
+  final respBodyYCheckPrint = json.encode(respBodyCheckPrint);
+  print(respBodyYCheckPrint);
+
+  return "OK";
+}
+
+Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num sumOrd, List<OrderDishesModel> orderDishes, int orderType) async {
   //Провести оплату по карте
   final String opGuid = Guid.newGuid.toString();
   Map data = {
@@ -67,7 +260,7 @@ Future<String> PayAndRegister(int typeCheck, List<Map> checkStrings, List<Map> c
     // 1 – возврат продажи/прихода;                             11 - возврат покупки/расхода;
     // 2 – корректировка продажи/прихода;                       12 – корректировка покупки/расхода;
     // 3 – корректировка возврата продажи/прихода; (>=ФФД 1.1)  13 – корректировка возврата покупки/расхода; (>=ФФД 1.1)
-    'TypeCheck': typeCheck,
+    'TypeCheck': 0,
     'NotPrint': false,
     'NumberCopies': 2,
     'CashierName': 'Иванов А.В.',
@@ -96,6 +289,7 @@ Future<String> PayAndRegister(int typeCheck, List<Map> checkStrings, List<Map> c
 
   final respBodyOfd = json.decode(responseOfd.body);
   final respBodyYOfd = json.encode(respBodyOfd);
+  print("Результат ОФД = ");
   print(respBodyYOfd);
 
   if(respBodyOfd['Error'] == ""){
@@ -109,11 +303,12 @@ Future<String> PayAndRegister(int typeCheck, List<Map> checkStrings, List<Map> c
 
     await conn.connect();
 
-    await conn.execute('UPDATE payments SET session_number = :session_number, check_number = :check_number, pay_sum = :pay_sum, json_resp = :json_resp WHERE guid = :guid',
+    await conn.execute('UPDATE payments SET session_number = :session_number, check_number = :check_number, pay_sum = :pay_sum, json_resp = :json_resp, status = :status WHERE guid = :guid',
         {
           'guid': opGuid,
           'session_number': respBodyOfd['SessionNumber'],
           'check_number': respBodyOfd['CheckNumber'],
+          'status': 1,
           'pay_sum': sumOrd,
           'json_resp': respBodyY,
         });
@@ -138,6 +333,170 @@ Future<String> PayAndRegister(int typeCheck, List<Map> checkStrings, List<Map> c
 
     print("Ошибка формирования чека: " + respBodyOfd['Error']);
     throw ("Ошибка формирования чека: " + respBodyOfd['Error']);
+  }
+
+  Map fisInfo = await getFiscalInfo(respBodyOfd['CheckNumber']);
+  String dateTimeString = fisInfo['RegisterCheck']['FiscalDate'];
+  final dateTime = DateTime.parse(dateTimeString);
+  final format = DateFormat('dd.MM.yy H:m');
+  final clockString = format.format(dateTime);
+
+  print("Дата время фискального чека");
+  print(clockString);
+
+  //Сделать номер заказа
+  final conn = await MySQLConnection.createConnection(
+    host: "192.168.0.153",
+    port: 3306,
+    userName: "kiosk_user",
+    password: "Iehbr201010",
+    databaseName: "kiosk", // optional
+  );
+
+  await conn.connect();
+
+  var sNUmber = await conn.execute('SELECT COUNT(id) as counter FROM payments WHERE session_number = :session_number',
+      {
+        'session_number': respBodyOfd['SessionNumber'],
+      });
+
+  String oNumber = "";
+  for (final n in sNUmber.rows) {
+    oNumber = (int.parse(n.colByName("counter")!) + 1).toString();
+  }
+
+  await conn.close();
+
+  //Распечатать чек возврата
+  checkInfo.add({
+    "PrintText": {
+      "Text": clockString,
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ПРИХОД",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "РН ККТ 0008341297005706",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ЗН ККТ 00107600577322",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ИНН 9723088772",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ФН 7384440800018563",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ФД " + fisInfo['RegisterCheck']['FiscalNumber'],
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "ФП " + fisInfo['RegisterCheck']['FiscalSign'],
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "BarCode": {
+      "BarcodeType": "QR",
+      "Barcode": fisInfo['QRCode'],
+    }
+  });
+
+  if(orderType == 1){
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
+        "Font": 1,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<H-" + oNumber,
+        "Font": 1,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+  } else {
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
+        "Font": 1,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+      "Text": ">#2#<T-" + oNumber,
+      "Font": 1,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<Спасибо за покупку!",
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
   }
 
 
@@ -219,7 +578,11 @@ Future<String> PayAndRegister(int typeCheck, List<Map> checkStrings, List<Map> c
       headers: {"Content-Type": "application/json"},
       body: bodyCheckPrintSmall);
 
-  return "ok";
+   if(orderType == 1){
+     return "H-" + oNumber;
+   } else {
+     return "T-" + oNumber;
+   }
 }
 
 
@@ -341,10 +704,120 @@ Future<String> OpenShift() async {
 
   await conn.close();
 
+  //Распечатать информационный чек
+  List<Map> checkInfo = [];
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<ООО \"БУНБОНАМБО\"",
+      "Font": 1,
+    }
+  });
+
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<Открытие смены",
+      "Font": 2,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "",
+    }
+  });
+
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<ВАШ ПАРОЛЬ",
+      "Font": 1,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<$randomNumber",
+      "Font": 1,
+    }
+  });
+
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<Сохраните пароль для доступа к настройкам",
+      "Font": 2,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<Смена открыта",
+      "Font": 2,
+    }
+  });
+
+  //Распечатать чек
+  final String guidCheckPrint = Guid.newGuid.toString();
+  Map dataCheckPrint = {
+    'Command': 'PrintDocument',
+    'IdCommand': guidCheckPrint,
+    'NumDevice': numDevicePrinter,
+    'Timeout': 60,
+    'CheckStrings': checkInfo,
+  };
+
+  var bodyCheckPrint = json.encode(dataCheckPrint);
+
+  final responseCheckPrint = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: bodyCheckPrint);
+
+  final respBodyCheckPrint = json.decode(responseCheckPrint.body);
+  final respBodyYCheckPrint = json.encode(respBodyCheckPrint);
+  print(respBodyYCheckPrint);
+
   return response.body;
 }
 
 Future<String> CloseShift() async {
+  //Закрыть смену по банку (сверка итогов)
+  //Вернуть платеж по карте
+  final String opGuid = Guid.newGuid.toString();
+  Map dataBank = {
+    'Command': 'Settlement',
+    'IdCommand': opGuid,
+    'NumDevice': numDeviceEkvaring,
+  };
+
+  var bodyBank = json.encode(dataBank);
+
+  final responseBank = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: bodyBank);
+
+  final respBodyBank = json.decode(responseBank.body);
+  final respBodyYBank = json.encode(respBodyBank);
+  print(respBodyYBank);
+
+  if(respBodyBank['Error'] == ""){
+
+  } else {
+    throw("Ошибка возврата платежа " + respBodyBank['Error']);
+  }
+
+
   final String guid = Guid.newGuid.toString();
   Map data = {
     'Command': 'CloseShift',

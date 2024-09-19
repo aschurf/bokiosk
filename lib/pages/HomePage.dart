@@ -95,7 +95,8 @@ Future<String> sendDataServer() async {
 
 class HomePage extends StatefulWidget {
   String menuId;
-  HomePage({Key? key, required this.menuId}) : super(key: key);
+  int typeOrder;
+  HomePage({Key? key, required this.menuId, required this.typeOrder}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -117,6 +118,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // initial load
     _listFuture = getMenus(widget.menuId, '7ae08cea-95e9-4136-a746-ed0fe8077770');
+    startTimer();
 
   }
 
@@ -126,9 +128,87 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // late Timer _timer;
+  int _start = 120;
+
+  void startTimer() {
+    const oneSec = const Duration(seconds: 1);
+    // _timer = new Timer.periodic(
+    //   oneSec,
+    //       (Timer timer) {
+    //     print(_start);
+    //     if (_start == 0) {
+    //       setState(() {
+    //         timer.cancel();
+    //       });
+    //       Navigator.pushReplacement(
+    //           context,
+    //           MaterialPageRoute(
+    //               builder: (context) => WelcomePage()
+    //           ));
+    //     } else if(_start == 30) {
+    //       showAlertDialogTimer();
+    //       setState(() {
+    //         _start--;
+    //       });
+    //     } else {
+    //       setState(() {
+    //         _start--;
+    //       });
+    //     }
+    //   },
+    // );
+  }
+
   @override
   void dispose() {
+    // _timer.cancel();
     super.dispose();
+  }
+
+  showAlertDialogTimer() {
+
+    // set up the buttons
+    Widget cancelButton = TextButton(
+      child: Text("начать заново", style: TextStyle(fontSize: 30),),
+      onPressed:  () {
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => WelcomePage()
+            ));
+        Navigator.pop(context);
+        // _timer.cancel();
+      },
+    );
+    Widget continueButton = TextButton(
+      child: Text("продолжить", style: TextStyle(fontSize: 30),),
+      onPressed:  () {
+        Navigator.pop(context);
+        setState(() {
+          _start = 120;
+        });
+        stater();
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Вы еще здесь?", style: TextStyle(fontSize: 50),),
+      content: Text("Чтобы продолжить оформление заказа, нажмите продолжить", style: TextStyle(fontSize: 30),),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
   }
 
   showAlertDialog(BuildContext context) {
@@ -150,7 +230,7 @@ class _HomePageState extends State<HomePage> {
         });
         stater();
         Navigator.pop(context);
-        Navigator.push(
+        Navigator.pushReplacement(
             context,
             MaterialPageRoute(
                 builder: (context) => WelcomePage()
@@ -183,7 +263,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Color(0xFF191917),
       body: GestureDetector(
         onTap: (){
-
+          _start = 120;
         },
         child: Stack(
           children: [
@@ -737,7 +817,7 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => ViewOrder(orderDishes: orderDishes,)
+                                  builder: (context) => ViewOrder(orderDishes: orderDishes, typeOrder: widget.typeOrder,)
                               )).then((value){
                             final data = value as Map<String, Object>;
                             print(data);

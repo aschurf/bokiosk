@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:bokiosk/pages/SuccessPayPage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -13,8 +14,8 @@ import 'WelcomePage.dart';
 
 class PayOrder extends StatefulWidget {
   List<OrderDishesModel> orderDishes;
-
-  PayOrder({Key? key, required this.orderDishes}) : super(key: key);
+  int typeOrder;
+  PayOrder({Key? key, required this.orderDishes, required this.typeOrder}) : super(key: key);
 
   @override
   State<PayOrder> createState() => _PayOrderState();
@@ -30,17 +31,44 @@ class _PayOrderState extends State<PayOrder> {
     // TODO: implement initState
     super.initState();
     preparePayment().then((res){
-      toWelcome();
+      toSuccess(res);
     }).catchError((error){
         setState(() {
-          errorMsg = error;
+          errorMsg = error.toString();
         });
+        startTimer();
     });
+  }
+
+  late Timer _timer;
+  int _start = 30;
+
+  void startTimer() {
+    const oneSec = const Duration(seconds: 1);
+    _timer = new Timer.periodic(
+      oneSec,
+          (Timer timer) {
+        if (_start == 0) {
+          setState(() {
+            timer.cancel();
+          });
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => WelcomePage()
+              ));
+        } else {
+          setState(() {
+            _start--;
+          });
+        }
+      },
+    );
   }
 
   Future<String> preparePayment () async {
     int counterCheck = 1;
-    num sumOrd = 0;
+    int sumOrd = 0;
     List<Map> strings = [];
     List<Map> checkInfo = [];
     checkInfo.add({
@@ -72,7 +100,7 @@ class _PayOrderState extends State<PayOrder> {
       }
     });
 
-    widget.orderDishes.forEach((dish){
+    for (var dish in widget.orderDishes) {
       checkInfo.add({
         "PrintText": {
           "Text": dish.dishCount.toString() + " " + dish.name + "<#0#>" + dish.price.toString() + ".00 * " + dish.dishCount.toString() + " шт. = " + (dish.dishCount * dish.price).toString() + ".00",
@@ -105,8 +133,8 @@ class _PayOrderState extends State<PayOrder> {
         }
       });
       counterCheck++;
-      sumOrd += dish.dishCount * dish.price;
-      dish.modifiers.forEach((modifierInd){
+      sumOrd += dish.dishCount.toInt() * dish.price.toInt();
+      for (var modifierInd in dish.modifiers) {
         checkInfo.add({
           "PrintText": {
             "Text": dish.dishCount.toString() + ". " + modifierInd.name + "<#0#>" + modifierInd.price.toString() + ".00 * " + dish.dishCount.toString() + " шт. = " + (dish.dishCount * modifierInd.price).toString() + ".00",
@@ -140,9 +168,9 @@ class _PayOrderState extends State<PayOrder> {
           }
         });
         counterCheck++;
-        sumOrd += modifierInd.price * dish.dishCount;
-      });
-    });
+        sumOrd += modifierInd.price.toInt() * dish.dishCount.toInt();
+      }
+    }
 
     checkInfo.add({
       "PrintText": {
@@ -205,21 +233,31 @@ class _PayOrderState extends State<PayOrder> {
       }
     });
 
-    await PayAndRegister(0, strings, checkInfo, sumOrd, widget.orderDishes).then((resp){
-
+    String nOr = "";
+    await PayAndRegister(strings, checkInfo, sumOrd, widget.orderDishes, widget.typeOrder).then((resp){
+      print(resp);
+      nOr = resp;
+      return resp;
     }).catchError((error){
       throw(error);
     });
-
-    return 'ok';
+    return nOr;
   }
 
-  void toWelcome(){
+  void toSuccess(res){
     Future((){
-      Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => WelcomePage()
-      ));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => SuccessPayPage(checkNumber: res,)
+          ));
     });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   @override
@@ -268,10 +306,76 @@ class _PayOrderState extends State<PayOrder> {
                 width: MediaQuery.of(context).size.width * 0.999,
                 height: 600,
                 child: Center(
-                  child: Text(errorMsg, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 40, color: Colors.red, fontFamily: 'Montserrat-Regular'), textAlign: TextAlign.center,),
+                  child: Text(errorMsg, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 40, color: Color(0xFFD72314), fontFamily: 'Montserrat-Regular'), textAlign: TextAlign.center,),
                 )
             ),
-          )
+          ),
+          errorMsg != "" ? Positioned(
+            bottom: 0,
+            left: 0,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.999,
+              height: MediaQuery.of(context).size.height * 0.07,
+              color: Color(0xFF42413D),
+              child:  Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  InkWell(
+                    onTap: () async {
+                      Navigator.pop(context, {
+                        "dishesOrder": widget.orderDishes
+                      });
+                    },
+                    child: Container(
+                      width: 580,
+                      height: 90,
+                      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.white30),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_back_ios, color: Colors.white, size: 30),
+                          SizedBox(width: 30,),
+                          Text('Попробовать еще раз', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 35, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-Regular')),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10,),
+                  InkWell(
+                    onTap: (){
+
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => WelcomePage()
+                          ));
+                    },
+                    child: Container(
+                      width: 400,
+                      height: 90,
+                      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Color(0xFFD72314),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Отменить ' + _start.toString(), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 35, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-Regular')),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ) : Container()
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bokiosk/pages/HistoryPayments.dart';
 import 'package:bokiosk/pages/WelcomePage.dart';
 import 'package:flutter/material.dart';
 
@@ -203,30 +204,39 @@ class _AdminPageState extends State<AdminPage> {
                   Positioned(
                     top: 800,
                     left: 0,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 50),
-                      width: 950,
-                      height: 100,
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Color(0xFF54534F)),
-                        color: Color(0xFF54534F),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            spreadRadius: 2,
-                            blurRadius: 10,
-                            offset: Offset(0, 0), // changes position of shadow
-                          ),
-                        ],
+                    child: InkWell(
+                      onTap: (){
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Historypayments()
+                            ));
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 50),
+                        width: 950,
+                        height: 100,
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Color(0xFF54534F)),
+                          color: Color(0xFF54534F),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              spreadRadius: 2,
+                              blurRadius: 10,
+                              offset: Offset(0, 0), // changes position of shadow
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Возврат чека',
+                              style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
+                              ]))),
+                        ),
                       ),
-                      child: Center(
-                        child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Возврат чека',
-                            style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
-                            ]))),
-                      ),
-                    ),
+                    )
                   ),
                   Positioned(
                     top: 950,

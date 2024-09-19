@@ -58,7 +58,7 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => HomePage(menuId: '31481',)
+                                builder: (context) => HomePage(menuId: '31481', typeOrder: 1,)
                             ));
                       },
                       child: Container(
@@ -80,7 +80,7 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => HomePage(menuId: '31481',)
+                              builder: (context) => HomePage(menuId: '31481', typeOrder: 2,)
                           ));
                     },
                     child: Container(

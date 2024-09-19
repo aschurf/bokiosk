@@ -8,7 +8,8 @@ import 'package:mysql_client/mysql_client.dart';
 
 class ViewOrder extends StatefulWidget {
   List<OrderDishesModel> orderDishes;
-  ViewOrder({Key? key, required this.orderDishes}) : super(key: key);
+  int typeOrder;
+  ViewOrder({Key? key, required this.orderDishes, required this.typeOrder}) : super(key: key);
 
   @override
   State<ViewOrder> createState() => _ViewOrderState();
@@ -233,7 +234,7 @@ class _ViewOrderState extends State<ViewOrder> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => PayOrder(orderDishes: widget.orderDishes,)
+                              builder: (context) => PayOrder(orderDishes: widget.orderDishes, typeOrder: widget.typeOrder,)
                           ));
                     },
                     child: Container(
