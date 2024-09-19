@@ -561,6 +561,23 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
     throw ("Ошибка печати чека: " + respBodyOfd['Error']);
   }
 
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<Спасибо за покупку!",
+      "Font": 3,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+
   //Распечатать чек
   final String guidCheckPrintSmall = Guid.newGuid.toString();
   Map dataCheckPrintSmall = {
