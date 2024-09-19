@@ -322,6 +322,7 @@ class _PayOrderState extends State<PayOrder> {
                 children: [
                   InkWell(
                     onTap: () async {
+                      _timer.cancel();
                       Navigator.pop(context, {
                         "dishesOrder": widget.orderDishes
                       });
@@ -348,7 +349,7 @@ class _PayOrderState extends State<PayOrder> {
                   SizedBox(width: 10,),
                   InkWell(
                     onTap: (){
-
+                      _timer.cancel();
                       Navigator.push(
                           context,
                           MaterialPageRoute(

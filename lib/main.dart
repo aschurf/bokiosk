@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:launch_at_startup/launch_at_startup.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:bokiosk/controllers/KkmServerController.dart';
 import 'package:bokiosk/pages/AdminPage.dart';
@@ -70,6 +72,17 @@ void main() async {
 
     await conn.close();
   }
+
+  PackageInfo packageInfo = await PackageInfo.fromPlatform();
+
+  launchAtStartup.setup(
+    appName: packageInfo.appName,
+    appPath: Platform.resolvedExecutable,
+    // Set packageName parameter to support MSIX.
+    packageName: 'jecheck.ru.bokiosk',
+  );
+
+  await launchAtStartup.enable();
 
   runApp(MyApp(kktData: kk, code: code, kkmState: js,));
 }

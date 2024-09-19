@@ -47,6 +47,12 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
     startTimer();
   }
 
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
