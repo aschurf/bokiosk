@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:bokiosk/controllers/IikoController.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'dart:async';
@@ -578,22 +579,31 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
     }
   });
 
-  //Распечатать чек
-  final String guidCheckPrintSmall = Guid.newGuid.toString();
-  Map dataCheckPrintSmall = {
-    'Command': 'PrintDocument',
-    'IdCommand': guidCheckPrintSmall,
-    'NumDevice': numDevicePrinterSmall,
-    'Timeout': 60,
-    'CheckStrings': checkInfo,
-  };
+  // //Распечатать чек
+  // final String guidCheckPrintSmall = Guid.newGuid.toString();
+  // Map dataCheckPrintSmall = {
+  //   'Command': 'PrintDocument',
+  //   'IdCommand': guidCheckPrintSmall,
+  //   'NumDevice': numDevicePrinterSmall,
+  //   'Timeout': 60,
+  //   'CheckStrings': checkInfo,
+  // };
+  //
+  // var bodyCheckPrintSmall = json.encode(dataCheckPrintSmall);
+  //
+  //  http
+  //     .post(Uri.parse(kkmServerUrl),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: bodyCheckPrintSmall);
 
-  var bodyCheckPrintSmall = json.encode(dataCheckPrintSmall);
-
-   http
-      .post(Uri.parse(kkmServerUrl),
-      headers: {"Content-Type": "application/json"},
-      body: bodyCheckPrintSmall);
+  //Отправить заказ на терминал
+  var ordNum = "";
+  if(orderType == 1){
+    ordNum = "H-" + oNumber;
+  } else {
+    ordNum = "T-" + oNumber;
+  }
+  createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType);
 
    if(orderType == 1){
      return "H-" + oNumber;

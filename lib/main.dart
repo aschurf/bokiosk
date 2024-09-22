@@ -73,16 +73,16 @@ void main() async {
     await conn.close();
   }
 
-  PackageInfo packageInfo = await PackageInfo.fromPlatform();
-
-  launchAtStartup.setup(
-    appName: packageInfo.appName,
-    appPath: Platform.resolvedExecutable,
-    // Set packageName parameter to support MSIX.
-    packageName: 'jecheck.ru.bokiosk',
-  );
-
-  await launchAtStartup.enable();
+  // PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  //
+  // launchAtStartup.setup(
+  //   appName: packageInfo.appName,
+  //   appPath: Platform.resolvedExecutable,
+  //   // Set packageName parameter to support MSIX.
+  //   packageName: 'jecheck.ru.bokiosk',
+  // );
+  //
+  // await launchAtStartup.enable();
 
   runApp(MyApp(kktData: kk, code: code, kkmState: js,));
 }

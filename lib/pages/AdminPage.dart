@@ -279,7 +279,7 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     )
                   ),
-                  Positioned(
+                  kkmState['Info']['SessionState'] == 2 ? Positioned(
                     top: 1600,
                     left: 0,
                     child: InkWell(
@@ -315,7 +315,7 @@ class _AdminPageState extends State<AdminPage> {
                         ),
                       ),
                     ),
-                  )
+                  ) : Container()
                 ],
               );
             }

@@ -84,7 +84,7 @@ class _ReturnPayPageState extends State<ReturnPayPage> {
                 )
             ),
           ) : Container(),
-          errorMsg == "" ? Positioned(
+          errorMsg != "" ? Positioned(
             top: 900,
             left: 0,
             child: Container(
@@ -95,17 +95,7 @@ class _ReturnPayPageState extends State<ReturnPayPage> {
                 )
             ),
           ) : Container(),
-          successMsg == "" ? Positioned(
-            top: 900,
-            left: 0,
-            child: Container(
-                width: MediaQuery.of(context).size.width * 0.999,
-                height: 600,
-                child: Center(
-                  child: Text('Следуйте указаниям на терминале', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 35, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-Regular')),
-                )
-            ),
-          ) : Positioned(
+          successMsg != "" ?  Positioned(
             top: 900,
             left: 0,
             child: Container(
@@ -115,8 +105,8 @@ class _ReturnPayPageState extends State<ReturnPayPage> {
                   child: Text(successMsg, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 40, color: Colors.green, fontFamily: 'Montserrat-Regular'), textAlign: TextAlign.center,),
                 )
             ),
-          ),
-          successMsg != "" ? Positioned(
+          ) : Container(),
+          successMsg != "" || errorMsg != ""  ? Positioned(
             bottom: 0,
             left: 0,
             child: Container(

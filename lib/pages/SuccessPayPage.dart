@@ -66,7 +66,7 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
             child: Container(
               width: MediaQuery.of(context).size.width * 0.999,
               padding: EdgeInsets.symmetric(horizontal: 20),
-              height: 300,
+              height: 200,
               child: Container(
                 width: 300,
                 height: 300,
@@ -97,13 +97,13 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
                 height: 150,
                 child: Center(
                   child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(widget.checkNumber,
-                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 120, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
+                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 140, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
                     ]), textAlign: TextAlign.center,)),
                 )
             ),
           ),
           Positioned(
-            top: 1100,
+            top: 750,
             left: 0,
             child: Container(
                 width: MediaQuery.of(context).size.width * 0.999,
@@ -114,6 +114,34 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
                     style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
                     ]), textAlign: TextAlign.center,)),
                 )
+            ),
+          ),
+          Positioned(
+            top: 1200,
+            left: 0,
+            child: Container(
+                width: MediaQuery.of(context).size.width * 0.999,
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                height: 150,
+                child: Center(
+                  child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Есть вопросы по работе киоска? - напишите нам!',
+                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 20, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
+                    ]), textAlign: TextAlign.center,)),
+                )
+            ),
+          ),
+          Positioned(
+            top: 1400,
+            left: 0,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.999,
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              height: 200,
+              child: Container(
+                width: 300,
+                height: 300,
+                child: Image.asset('assets/images/taplink.png'),
+              ),
             ),
           ),
           Positioned(
