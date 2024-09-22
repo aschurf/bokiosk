@@ -668,7 +668,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         ),
                                                                                       ),
                                                                                     ),
-                                                                                    InkWell(
+                                                                                    snapshot.data![groupIndex].items[index].stopList ? InkWell(
                                                                                       onTap: (){
                                                                                         List<OrderDishesModifiersModel> modifiersModel = [];
                                                                                         if(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0){
@@ -736,7 +736,7 @@ class _HomePageState extends State<HomePage> {
                                                                                             child: Text('Добавить', style: TextStyle(fontWeight: FontWeight.w400, fontSize: 48, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraLight')),
                                                                                           )
                                                                                       ),
-                                                                                    ),
+                                                                                    ) : Container(),
                                                                                   ],
                                                                                 )
                                                                               ],
