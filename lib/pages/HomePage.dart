@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:bokiosk/models/MenuModel.dart';
 import 'package:bokiosk/models/OrderDishesModel.dart';
 import 'package:bokiosk/pages/AdminPage.dart';
+import 'package:bokiosk/pages/OrderTypeSelect.dart';
 import 'package:bokiosk/pages/PinCodePage.dart';
 import 'package:bokiosk/pages/ViewOrder.dart';
 import 'package:bokiosk/pages/WelcomePage.dart';
@@ -278,7 +279,7 @@ class _HomePageState extends State<HomePage> {
               top: 50,
               left: 5,
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.99,
+                width: MediaQuery.of(context).size.width * 0.999,
                 height: MediaQuery.of(context).size.height * 0.99,
                 child: SingleChildScrollView(
                   child: Column(
@@ -333,7 +334,36 @@ class _HomePageState extends State<HomePage> {
                           Container(
                             width: 50,
                             height: 50,
-                          )
+                          ),
+                          Container(
+                            width: 670,
+                            child: Text(widget.typeOrder == 1 ?  'Заказ в зале' : 'Заказ с собой', style: TextStyle(fontFamily: 'Montserrat-ExtraBold', fontSize: 45, color: Colors.white),),
+                            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 30),
+                          ),
+                          InkWell(
+                            onTap: () async {
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => OrderTypeSelect()
+                                  ));
+                            },
+                            child: Container(
+                              width: 200,
+                              height: 70,
+                              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(color: Colors.white30),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text('Изменить', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-Regular')),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: 30,),
@@ -668,7 +698,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         ),
                                                                                       ),
                                                                                     ),
-                                                                                    snapshot.data![groupIndex].items[index].stopList ? InkWell(
+                                                                                    snapshot.data![groupIndex].items[index].stopList == false ? InkWell(
                                                                                       onTap: (){
                                                                                         List<OrderDishesModifiersModel> modifiersModel = [];
                                                                                         if(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0){
