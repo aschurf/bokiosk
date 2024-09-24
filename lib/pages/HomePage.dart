@@ -847,7 +847,7 @@ class _HomePageState extends State<HomePage> {
                                                                       ),
                                                                     ]))) : Container(),
                                                                 MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].name.replaceAll('/n', '\n'),
-                                                                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 15, color: Colors.white, fontFamily: 'Montserrat-ExtraLight', shadows: [
+                                                                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 20, color: Colors.white, fontFamily: 'Montserrat-ExtraLight', shadows: [
                                                                       Shadow(
                                                                         offset: Offset(1, 1),
                                                                         blurRadius: 5.0,
