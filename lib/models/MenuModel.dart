@@ -36,6 +36,7 @@ class MenuItemModel {
   bool stopList;
   num count;
   List<MenuItemSize> itemSizes;
+  List<Labels> labels;
 
   MenuItemModel({
     required this.sku,
@@ -45,6 +46,7 @@ class MenuItemModel {
     required this.stopList,
     required this.count,
     required this.itemSizes,
+    required this.labels,
   });
 
   factory MenuItemModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,14 @@ class MenuItemModel {
       });
     }
 
+    List<Labels> labelsItems = <Labels>[];
+    if (json['labels'] != null) {
+      List resultLabels = json['labels'];
+      resultLabels.forEach((element) {
+        labelsItems.add(Labels.fromJson(element));
+      });
+    }
+
     return MenuItemModel(
       sku: json['sku'],
       name: json['name'],
@@ -65,10 +75,26 @@ class MenuItemModel {
       stopList: json['stopList'],
       count: json['count'],
       itemSizes: itemSizes,
+      labels: labelsItems,
     );
 
   }
 
+}
+
+class Labels {
+  String name;
+
+  Labels({
+    required this.name
+  });
+
+  factory Labels.fromJson(Map<String, dynamic> json) {
+    return Labels(
+      name: json['name'],
+    );
+
+  }
 }
 
 class MenuItemSize {

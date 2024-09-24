@@ -816,7 +816,7 @@ class _HomePageState extends State<HomePage> {
                                                           width: 500,
                                                           decoration: BoxDecoration(
                                                             image: snapshot.data![groupIndex].items[index].stopList ? DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
-                                                                fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.grey, BlendMode.saturation)) : DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
+                                                                fit: BoxFit.cover) : DecorationImage(image: CachedNetworkImageProvider(snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl),
                                                                 fit: BoxFit.cover),
                                                             borderRadius: BorderRadius.circular(6),
                                                           ),
@@ -838,8 +838,16 @@ class _HomePageState extends State<HomePage> {
                                                                     ]))) : Container(),
                                                                 SizedBox(height: 2,),
                                                                 // Text(snapshot.data![index]['name'].toString(), style: TextStyle(fontWeight: FontWeight.w200, fontSize: 14, color: Colors.white)),
-                                                                MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].name,
+                                                                snapshot.data![groupIndex].items[index].labels.length > 0 ? MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].labels[0].name,
                                                                     style: TextStyle(fontWeight: FontWeight.w200, fontSize: 25, color: Colors.white, fontFamily: 'Montserrat-ExtraBold', shadows: [
+                                                                      Shadow(
+                                                                        offset: Offset(1, 1),
+                                                                        blurRadius: 5.0,
+                                                                        color: Color.fromARGB(255, 0, 0, 0),
+                                                                      ),
+                                                                    ]))) : Container(),
+                                                                MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(snapshot.data![groupIndex].items[index].name.replaceAll('/n', '\n'),
+                                                                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 15, color: Colors.white, fontFamily: 'Montserrat-ExtraLight', shadows: [
                                                                       Shadow(
                                                                         offset: Offset(1, 1),
                                                                         blurRadius: 5.0,

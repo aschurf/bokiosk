@@ -29,20 +29,20 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
               ),
             ),
           ),
-          Positioned(
-            top: 500,
-            left: 0,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.999,
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              height: 150,
-              child: Center(
-                child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Тип заказа:',
-                  style: TextStyle(fontWeight: FontWeight.w200, fontSize: 60, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
-                  ]), textAlign: TextAlign.center,)),
-              )
-            ),
-          ),
+          // Positioned(
+          //   top: 500,
+          //   left: 0,
+          //   child: Container(
+          //     width: MediaQuery.of(context).size.width * 0.999,
+          //     padding: EdgeInsets.symmetric(horizontal: 20),
+          //     height: 150,
+          //     child: Center(
+          //       child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Тип заказа:',
+          //         style: TextStyle(fontWeight: FontWeight.w200, fontSize: 60, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
+          //         ]), textAlign: TextAlign.center,)),
+          //     )
+          //   ),
+          // ),
           Positioned(
             top: 600,
             left: 0,
