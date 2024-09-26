@@ -32,7 +32,7 @@ Future<String> getIikoAuth() async {
 }
 
 
-Future<void> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumber, int sumOrder, int orderType) async {
+Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumber, int sumOrder, int orderType) async {
 
   String token = await getIikoAuth();
 
@@ -92,5 +92,31 @@ Future<void> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumb
 
   print(response.body);
 
-  // final respBody = json.decode(response.body);
+  final respBody = json.decode(response.body);
+  return respBody;
+}
+
+
+Future<Map> getIikoOrderNumber(String orderId) async {
+  String token = await getIikoAuth();
+
+  List orders = [];
+  orders.add(orderId);
+  Map data = {
+    'organizationId': iikoOrganizationId,
+    'orderIds': orders,
+  };
+
+  var body = json.encode(data);
+  print(body);
+  final response = await http
+      .post(Uri.parse('https://api-ru.iiko.services/api/1/deliveries/by_id'),
+      headers: {"Content-Type": "application/json", "Authorization": "Bearer " + token},
+      body: body);
+
+
+  print(response.body);
+
+  final respBody = json.decode(response.body);
+  return respBody;
 }

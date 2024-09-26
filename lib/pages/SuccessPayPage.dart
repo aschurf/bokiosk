@@ -94,7 +94,7 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
             child: Container(
                 width: MediaQuery.of(context).size.width * 0.999,
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                height: 150,
+                height: 160,
                 child: Center(
                   child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text(widget.checkNumber,
                     style: TextStyle(fontWeight: FontWeight.w200, fontSize: 140, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [

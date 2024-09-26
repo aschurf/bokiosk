@@ -368,6 +368,29 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
   await conn.close();
 
+  var ordNum = "";
+  if(orderType == 1){
+    ordNum = "H-" + oNumber;
+  } else {
+    ordNum = "T-" + oNumber;
+  }
+
+  //Отправляю заказ в IIKO
+  String iikoOrderId = "";
+  await createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
+    if(resp.containsKey('orderInfo')){
+      iikoOrderId = resp['orderInfo']['id'];
+      print("ID заказа IIKO = $iikoOrderId");
+      sleep(Duration(seconds:2));
+      await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
+        if(orIikoNumber.containsKey('orders')){
+          ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
+          print("Номер заказа IIKO" + ordNum);
+        }
+      });
+    }
+  });
+
   //Распечатать чек возврата
   checkInfo.add({
     "PrintText": {
@@ -424,81 +447,39 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
     }
   });
 
-  if(orderType == 1){
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
 
-    checkInfo.add({
-      "PrintText": {
-        "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
-        "Font": 1,
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": ">#2#<H-" + oNumber,
-        "Font": 1,
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-  } else {
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-
-    checkInfo.add({
-      "PrintText": {
-        "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
-        "Font": 1,
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-      "Text": ">#2#<T-" + oNumber,
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
       "Font": 1,
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": ">#2#<Спасибо за покупку!",
-        "Font": 3,
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-    checkInfo.add({
-      "PrintText": {
-        "Text": "<<->>",
-      }
-    });
-  }
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<" + ordNum,
+      "Font": 1,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
 
 
   //Распечатать чек
@@ -596,20 +577,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   //     headers: {"Content-Type": "application/json"},
   //     body: bodyCheckPrintSmall);
 
-  //Отправить заказ на терминал
-  var ordNum = "";
-  if(orderType == 1){
-    ordNum = "H-" + oNumber;
-  } else {
-    ordNum = "T-" + oNumber;
-  }
-  createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType);
-
-   if(orderType == 1){
-     return "H-" + oNumber;
-   } else {
-     return "T-" + oNumber;
-   }
+   return ordNum;
 }
 
 
