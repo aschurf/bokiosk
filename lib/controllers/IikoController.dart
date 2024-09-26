@@ -44,7 +44,7 @@ Future<void> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumb
       dishModifiers.add(iikoOrderDishesModifiersModel(
           productId: modifier.id,
           price: modifier.price.toInt(),
-          amount: element.dishCount.toInt()
+          amount: 1
       ));
     }
 
