@@ -32,6 +32,24 @@ Future<String> getIikoAuth() async {
 }
 
 
+Future<void> confirmIikoOrder (String orderId) async {
+  String token = await getIikoAuth();
+
+  Map data = {
+    'organizationId': iikoOrganizationId,
+    'orderId': orderId,
+  };
+
+  var body = json.encode(data);
+  http
+      .post(Uri.parse('https://api-ru.iiko.services/api/1/order/close'),
+      headers: {"Content-Type": "application/json", "Authorization": "Bearer " + token},
+      body: body);
+
+
+}
+
+
 Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumber, int sumOrder, int orderType) async {
 
   String token = await getIikoAuth();
@@ -62,6 +80,9 @@ Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumbe
     'terminalGroupId': iikoTerminalGroupId,
     'order': {
       "externalNumber": checkNumber,
+      "tableIds" : [
+        iikoTableOrderId
+      ],
       "items": iikoDishes,
       "phone": "+79269484308",
       'orderTypeId': orderType == 1 ? iikoOrderTypeHere : iikoOrderTypeTakeAway,
@@ -79,13 +100,18 @@ Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumbe
         }
       ],
     },
+    "createOrderSettings": {
+      "servicePrint": false,
+      "transportToFrontTimeout": 0,
+      "checkStopList": false
+    }
   };
 
 
   var body = json.encode(data);
   print(body);
   final response = await http
-      .post(Uri.parse('https://api-ru.iiko.services/api/1/deliveries/create'),
+      .post(Uri.parse('https://api-ru.iiko.services/api/1/order/create'),
       headers: {"Content-Type": "application/json", "Authorization": "Bearer " + token},
       body: body);
 
@@ -103,14 +129,14 @@ Future<Map> getIikoOrderNumber(String orderId) async {
   List orders = [];
   orders.add(orderId);
   Map data = {
-    'organizationId': iikoOrganizationId,
+    'organizationIds': [iikoOrganizationId],
     'orderIds': orders,
   };
 
   var body = json.encode(data);
   print(body);
   final response = await http
-      .post(Uri.parse('https://api-ru.iiko.services/api/1/deliveries/by_id'),
+      .post(Uri.parse('https://api-ru.iiko.services/api/1/order/by_id'),
       headers: {"Content-Type": "application/json", "Authorization": "Bearer " + token},
       body: body);
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:bokiosk/controllers/IikoController.dart';
+import 'package:bokiosk/controllers/LogController.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'dart:async';
@@ -208,143 +209,145 @@ Future<String> returnPayment (List<Map> checkStrings, List<Map> checkInfo, num s
 Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num sumOrd, List<OrderDishesModel> orderDishes, int orderType) async {
   //Провести оплату по карте
   final String opGuid = Guid.newGuid.toString();
-  Map data = {
-    'Command': 'PayByPaymentCard',
-    'IdCommand': opGuid,
-    'NumDevice': numDeviceEkvaring,
-    'Amount': sumOrd,
-  };
-
-  var body = json.encode(data);
-
-  print(body);
-
-  final response = await http
-      .post(Uri.parse(kkmServerUrl),
-      headers: {"Content-Type": "application/json"},
-      body: body);
-
-  final respBody = json.decode(response.body);
-  final respBodyY = json.encode(respBody);
-  print(respBodyY);
-
-  if(respBody['Error'] == ""){
-    //ОПлата прошла успешно
-    final conn = await MySQLConnection.createConnection(
-      host: mySqlServer,
-      port: 3306,
-      userName: "kiosk_user",
-      password: "Iehbr201010",
-      databaseName: "kiosk", // optional
-    );
-
-    await conn.connect();
-
-    await conn.execute('insert into payments (guid, univId, ekv_json) values (:guid, :univId,  :ekv_json)', {'guid': opGuid, 'univId': respBody['UniversalID'], 'ekv_json': respBodyY});
-
-    await conn.close();
-  } else {
-    print('Ошибка оплаты: ' + respBody['Error']);
-    throw('Ошибка оплаты: ' + respBody['Error']);
-  }
-
-  //Зарегистрировать платеж в ОФД
-  final String guidOfd = Guid.newGuid.toString();
-  Map dataOfd = {
-    'Command': 'RegisterCheck',
-    'IdCommand': guidOfd,
-    'NumDevice': numDeviceKkm,
-    'Timeout': 60,
-    'IsFiscalCheck': true,
-    // Тип чека, Тег 1054;
-    // 0 – продажа/приход;                                      10 – покупка/расход;
-    // 1 – возврат продажи/прихода;                             11 - возврат покупки/расхода;
-    // 2 – корректировка продажи/прихода;                       12 – корректировка покупки/расхода;
-    // 3 – корректировка возврата продажи/прихода; (>=ФФД 1.1)  13 – корректировка возврата покупки/расхода; (>=ФФД 1.1)
-    'TypeCheck': 0,
-    'NotPrint': false,
-    'NumberCopies': 2,
-    'CashierName': 'Иванов А.В.',
-    'CashierVATIN': '772577978824',
-    // Если надо одновременно автоматически провести транзакцию через эквайринг
-    // Эквайринг будет задействован если: 1. чек фискальный, 2. оплата по "ElectronicPayment" не равна 0, 3. PayByProcessing = true
-    // Использовать эквайринг: Null - из настроек на сервере, false - не будет, true - будет
-    'PayByProcessing': false, //В тестовом чеке автоматический эквайринг выключен
-    'NumDeviceByProcessing': numDeviceEkvaring,
-    'ReceiptNumber': "TEST-01", // Номер чека для эквайринга
-    'PrintSlipAfterCheck': true, // Печатать Слип-чек после чека (а не в чеке)
-    'Cash': 0, // Наличная оплата (2 знака после запятой), Тег 1031
-    'ElectronicPayment': sumOrd.toInt(), // Сумма электронной оплаты (2 знака после запятой), Тег 1081
-    'AdvancePayment': 0, // Сумма из предоплаты (зачетом аванса) (2 знака после запятой), Тег 1215
-    'Credit': 0, // Сумма постоплатой(в кредит) (2 знака после запятой), Тег 1216
-    'CashProvision': 0, // Сумма оплаты встречным предоставлением (сертификаты, др. мат.ценности) (2 знака после запятой), Тег 1217
-    'CheckStrings': checkStrings
-  };
-
-  var bodyOfd = json.encode(dataOfd);
-
-  final responseOfd = await http
-      .post(Uri.parse(kkmServerUrl),
-      headers: {"Content-Type": "application/json"},
-      body: bodyOfd);
-
-  final respBodyOfd = json.decode(responseOfd.body);
-  final respBodyYOfd = json.encode(respBodyOfd);
-  print("Результат ОФД = ");
-  print(respBodyYOfd);
-
-  if(respBodyOfd['Error'] == ""){
-    final conn = await MySQLConnection.createConnection(
-      host: mySqlServer,
-      port: 3306,
-      userName: "kiosk_user",
-      password: "Iehbr201010",
-      databaseName: "kiosk", // optional
-    );
-
-    await conn.connect();
-
-    await conn.execute('UPDATE payments SET session_number = :session_number, check_number = :check_number, pay_sum = :pay_sum, json_resp = :json_resp, status = :status WHERE guid = :guid',
-        {
-          'guid': opGuid,
-          'session_number': respBodyOfd['SessionNumber'],
-          'check_number': respBodyOfd['CheckNumber'],
-          'status': 1,
-          'pay_sum': sumOrd,
-          'json_resp': respBodyY,
-        });
-
-    await conn.close();
-  } else {
-    final String guidRetPay = Guid.newGuid.toString();
-    Map dataCheckPrint = {
-      'Command': 'EmergencyReversal',
-      'IdCommand': guidRetPay,
-      'NumDevice': numDeviceEkvaring,
-      'Timeout': 60,
-      'UniversalID': respBody['UniversalID'],
-    };
-
-    var bodyCheckPrint = json.encode(dataCheckPrint);
-
-    await http
-        .post(Uri.parse(kkmServerUrl),
-        headers: {"Content-Type": "application/json"},
-        body: bodyCheckPrint);
-
-    print("Ошибка формирования чека: " + respBodyOfd['Error']);
-    throw ("Ошибка формирования чека: " + respBodyOfd['Error']);
-  }
-
-  Map fisInfo = await getFiscalInfo(respBodyOfd['CheckNumber']);
-  String dateTimeString = fisInfo['RegisterCheck']['FiscalDate'];
-  final dateTime = DateTime.parse(dateTimeString);
-  final format = DateFormat('dd.MM.yy H:m');
-  final clockString = format.format(dateTime);
-
-  print("Дата время фискального чека");
-  print(clockString);
-
+  // Map data = {
+  //   'Command': 'PayByPaymentCard',
+  //   'IdCommand': opGuid,
+  //   'NumDevice': numDeviceEkvaring,
+  //   'Amount': sumOrd,
+  // };
+  //
+  // var body = json.encode(data);
+  //
+  // print(body);
+  //
+  // final response = await http
+  //     .post(Uri.parse(kkmServerUrl),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: body);
+  //
+  // final respBody = json.decode(response.body);
+  // final respBodyY = json.encode(respBody);
+  // print(respBodyY);
+  //
+  // if(respBody['Error'] == ""){
+  //   //ОПлата прошла успешно
+  //   final conn = await MySQLConnection.createConnection(
+  //     host: mySqlServer,
+  //     port: 3306,
+  //     userName: "kiosk_user",
+  //     password: "Iehbr201010",
+  //     databaseName: "kiosk", // optional
+  //   );
+  //
+  //   await conn.connect();
+  //
+  //   await conn.execute('insert into payments (guid, univId, ekv_json) values (:guid, :univId,  :ekv_json)', {'guid': opGuid, 'univId': respBody['UniversalID'], 'ekv_json': respBodyY});
+  //
+  //   await conn.close();
+  //
+  //   insertLog(opGuid, "Оплата по банку прошла успешно");
+  // } else {
+  //   insertLog(opGuid, "Оплата по банку завершилась ошибкой " + respBody['Error']);
+  //   throw('Ошибка оплаты: ' + respBody['Error']);
+  // }
+  //
+  // //Зарегистрировать платеж в ОФД
+  // final String guidOfd = Guid.newGuid.toString();
+  // Map dataOfd = {
+  //   'Command': 'RegisterCheck',
+  //   'IdCommand': guidOfd,
+  //   'NumDevice': numDeviceKkm,
+  //   'Timeout': 60,
+  //   'IsFiscalCheck': true,
+  //   // Тип чека, Тег 1054;
+  //   // 0 – продажа/приход;                                      10 – покупка/расход;
+  //   // 1 – возврат продажи/прихода;                             11 - возврат покупки/расхода;
+  //   // 2 – корректировка продажи/прихода;                       12 – корректировка покупки/расхода;
+  //   // 3 – корректировка возврата продажи/прихода; (>=ФФД 1.1)  13 – корректировка возврата покупки/расхода; (>=ФФД 1.1)
+  //   'TypeCheck': 0,
+  //   'NotPrint': false,
+  //   'NumberCopies': 2,
+  //   'CashierName': 'Иванов А.В.',
+  //   'CashierVATIN': '772577978824',
+  //   // Если надо одновременно автоматически провести транзакцию через эквайринг
+  //   // Эквайринг будет задействован если: 1. чек фискальный, 2. оплата по "ElectronicPayment" не равна 0, 3. PayByProcessing = true
+  //   // Использовать эквайринг: Null - из настроек на сервере, false - не будет, true - будет
+  //   'PayByProcessing': false, //В тестовом чеке автоматический эквайринг выключен
+  //   'NumDeviceByProcessing': numDeviceEkvaring,
+  //   'ReceiptNumber': "TEST-01", // Номер чека для эквайринга
+  //   'PrintSlipAfterCheck': true, // Печатать Слип-чек после чека (а не в чеке)
+  //   'Cash': 0, // Наличная оплата (2 знака после запятой), Тег 1031
+  //   'ElectronicPayment': sumOrd.toInt(), // Сумма электронной оплаты (2 знака после запятой), Тег 1081
+  //   'AdvancePayment': 0, // Сумма из предоплаты (зачетом аванса) (2 знака после запятой), Тег 1215
+  //   'Credit': 0, // Сумма постоплатой(в кредит) (2 знака после запятой), Тег 1216
+  //   'CashProvision': 0, // Сумма оплаты встречным предоставлением (сертификаты, др. мат.ценности) (2 знака после запятой), Тег 1217
+  //   'CheckStrings': checkStrings
+  // };
+  //
+  // var bodyOfd = json.encode(dataOfd);
+  //
+  // final responseOfd = await http
+  //     .post(Uri.parse(kkmServerUrl),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: bodyOfd);
+  //
+  // final respBodyOfd = json.decode(responseOfd.body);
+  // final respBodyYOfd = json.encode(respBodyOfd);
+  //
+  // if(respBodyOfd['Error'] == ""){
+  //   final conn = await MySQLConnection.createConnection(
+  //     host: mySqlServer,
+  //     port: 3306,
+  //     userName: "kiosk_user",
+  //     password: "Iehbr201010",
+  //     databaseName: "kiosk", // optional
+  //   );
+  //
+  //   await conn.connect();
+  //
+  //   await conn.execute('UPDATE payments SET session_number = :session_number, check_number = :check_number, pay_sum = :pay_sum, json_resp = :json_resp, status = :status WHERE guid = :guid',
+  //       {
+  //         'guid': opGuid,
+  //         'session_number': respBodyOfd['SessionNumber'],
+  //         'check_number': respBodyOfd['CheckNumber'],
+  //         'status': 1,
+  //         'pay_sum': sumOrd,
+  //         'json_resp': respBodyY,
+  //       });
+  //
+  //   await conn.close();
+  //
+  //   insertLog(opGuid, "Регистрация чека в ОФД прошла успешно");
+  // } else {
+  //   final String guidRetPay = Guid.newGuid.toString();
+  //   Map dataCheckPrint = {
+  //     'Command': 'EmergencyReversal',
+  //     'IdCommand': guidRetPay,
+  //     'NumDevice': numDeviceEkvaring,
+  //     'Timeout': 60,
+  //     'UniversalID': respBody['UniversalID'],
+  //   };
+  //
+  //   var bodyCheckPrint = json.encode(dataCheckPrint);
+  //
+  //   await http
+  //       .post(Uri.parse(kkmServerUrl),
+  //       headers: {"Content-Type": "application/json"},
+  //       body: bodyCheckPrint);
+  //
+  //   insertLog(opGuid, "Ошибка формирования чека: " + respBodyOfd['Error']);
+  //   throw ("Ошибка формирования чека: " + respBodyOfd['Error']);
+  // }
+  //
+  // Map fisInfo = await getFiscalInfo(respBodyOfd['CheckNumber']);
+  // String dateTimeString = fisInfo['RegisterCheck']['FiscalDate'];
+  // final dateTime = DateTime.parse(dateTimeString);
+  // final format = DateFormat('dd.MM.yy H:m');
+  // final clockString = format.format(dateTime);
+  //
+  // print("Дата время фискального чека");
+  // print(clockString);
+  //
   //Сделать номер заказа
   final conn = await MySQLConnection.createConnection(
     host: mySqlServer,
@@ -358,7 +361,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
   var sNUmber = await conn.execute('SELECT COUNT(id) as counter FROM payments WHERE session_number = :session_number',
       {
-        'session_number': respBodyOfd['SessionNumber'],
+        'session_number': 22,
       });
 
   String oNumber = "";
@@ -374,209 +377,225 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   } else {
     ordNum = "T-" + oNumber;
   }
-
+  insertLog(opGuid, "Присвоен стартовый номер заказа $ordNum");
   //Отправляю заказ в IIKO
   String iikoOrderId = "";
   await createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
     if(resp.containsKey('orderInfo')){
       iikoOrderId = resp['orderInfo']['id'];
       print("ID заказа IIKO = $iikoOrderId");
-      sleep(Duration(seconds:2));
-      await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
-        if(orIikoNumber.containsKey('orders')){
-          ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
-          print("Номер заказа IIKO" + ordNum);
-        }
-      });
-    }
-  });
-
-  //Распечатать чек возврата
-  checkInfo.add({
-    "PrintText": {
-      "Text": clockString,
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "ПРИХОД",
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "РН ККТ 0008341297005706",
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "ЗН ККТ 00107600577322",
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "ИНН 9723088772",
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "ФН 7384440800018563",
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "ФД " + fisInfo['RegisterCheck']['FiscalNumber'],
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "ФП " + fisInfo['RegisterCheck']['FiscalSign'],
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "BarCode": {
-      "BarcodeType": "QR",
-      "Barcode": fisInfo['QRCode'],
-    }
-  });
-
-  checkInfo.add({
-    "PrintText": {
-      "Text": "<<->>",
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "<<->>",
-    }
-  });
-
-  checkInfo.add({
-    "PrintText": {
-      "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
-      "Font": 1,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": ">#2#<" + ordNum,
-      "Font": 1,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "<<->>",
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "<<->>",
-    }
-  });
-
-
-  //Распечатать чек
-  final String guidCheckPrint = Guid.newGuid.toString();
-  Map dataCheckPrint = {
-    'Command': 'PrintDocument',
-    'IdCommand': guidCheckPrint,
-    'NumDevice': numDevicePrinter,
-    'Timeout': 60,
-    'CheckStrings': checkInfo,
-  };
-
-  var bodyCheckPrint = json.encode(dataCheckPrint);
-
-  final responseCheckPrint = await http
-      .post(Uri.parse(kkmServerUrl),
-      headers: {"Content-Type": "application/json"},
-      body: bodyCheckPrint);
-
-  final respBodyCheckPrint = json.decode(responseCheckPrint.body);
-  final respBodyYCheckPrint = json.encode(respBodyCheckPrint);
-  print(respBodyYCheckPrint);
-
-
-  if(respBodyCheckPrint['Error'] == ""){
-    final conn = await MySQLConnection.createConnection(
-      host: mySqlServer,
-      port: 3306,
-      userName: "kiosk_user",
-      password: "Iehbr201010",
-      databaseName: "kiosk", // optional
-    );
-
-    await conn.connect();
-
-    for (var i = 0; i < orderDishes.length; i++){
-      await conn.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
-          {
-            'payment_guid': opGuid,
-            'dish_id': orderDishes[i].id,
-            'dish_name': orderDishes[i].name,
-            'dish_count': orderDishes[i].dishCount,
-            'dish_price': orderDishes[i].price,
-          });
-
-      for(var b = 0; b < orderDishes[i].modifiers.length; b++){
-        await conn.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
-            {
-              'payment_guid': opGuid,
-              'dish_id': orderDishes[i].modifiers[b].id,
-              'dish_name': orderDishes[i].modifiers[b].name,
-              'dish_count': orderDishes[i].dishCount,
-              'dish_price': orderDishes[i].modifiers[b].price,
-            });
+      String newOrdNum = "";
+      int coun = 0;
+      while (newOrdNum == "" && coun < 5){
+        sleep(Duration(seconds:3));
+        await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
+          if(orIikoNumber.containsKey('orders')){
+            ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
+            newOrdNum = orIikoNumber['orders'][0]['order']['number'].toString();
+            insertLog(opGuid, "Присвоен IIKO номер заказа $ordNum, попытка $coun");
+          } else {
+            insertLog(opGuid, "Ошибка получения номера заказа из IIKO, попытка $coun");
+          }
+        });
+        confirmIikoOrder(iikoOrderId);
+        coun++;
       }
-    }
-
-    await conn.close();
-  } else {
-    print("Ошибка печати чека: " + respBodyOfd['Error']);
-    throw ("Ошибка печати чека: " + respBodyOfd['Error']);
-  }
-
-  checkInfo.add({
-    "PrintText": {
-      "Text": ">#2#<Спасибо за покупку!",
-      "Font": 3,
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "<<->>",
-    }
-  });
-  checkInfo.add({
-    "PrintText": {
-      "Text": "<<->>",
+    } else {
+      insertLog(opGuid, "Ошибка создания заказа на стол");
     }
   });
 
+  // //Распечатать чек возврата
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": clockString,
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "ПРИХОД",
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "РН ККТ 0008341297005706",
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "ЗН ККТ 00107600577322",
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "ИНН 9723088772",
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "ФН 7384440800018563",
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "ФД " + fisInfo['RegisterCheck']['FiscalNumber'],
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "ФП " + fisInfo['RegisterCheck']['FiscalSign'],
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "BarCode": {
+  //     "BarcodeType": "QR",
+  //     "Barcode": fisInfo['QRCode'],
+  //   }
+  // });
+  //
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "<<->>",
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "<<->>",
+  //   }
+  // });
+  //
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": ">#2#<НОМЕР ВАШЕГО ЗАКАЗА",
+  //     "Font": 1,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": ">#2#<" + ordNum,
+  //     "Font": 1,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "<<->>",
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "<<->>",
+  //   }
+  // });
+  //
+  //
   // //Распечатать чек
-  // final String guidCheckPrintSmall = Guid.newGuid.toString();
-  // Map dataCheckPrintSmall = {
+  // final String guidCheckPrint = Guid.newGuid.toString();
+  // Map dataCheckPrint = {
   //   'Command': 'PrintDocument',
-  //   'IdCommand': guidCheckPrintSmall,
-  //   'NumDevice': numDevicePrinterSmall,
+  //   'IdCommand': guidCheckPrint,
+  //   'NumDevice': numDevicePrinter,
   //   'Timeout': 60,
   //   'CheckStrings': checkInfo,
   // };
   //
-  // var bodyCheckPrintSmall = json.encode(dataCheckPrintSmall);
+  // var bodyCheckPrint = json.encode(dataCheckPrint);
   //
-  //  http
+  // final responseCheckPrint = await http
   //     .post(Uri.parse(kkmServerUrl),
   //     headers: {"Content-Type": "application/json"},
-  //     body: bodyCheckPrintSmall);
+  //     body: bodyCheckPrint);
+  //
+  // insertLog(opGuid, "Отправка чека на печать на принтер");
+  //
+  // final respBodyCheckPrint = json.decode(responseCheckPrint.body);
+  // final respBodyYCheckPrint = json.encode(respBodyCheckPrint);
+  // print(respBodyYCheckPrint);
+  //
+  //
+  // if(respBodyCheckPrint['Error'] == ""){
+  //   final conn = await MySQLConnection.createConnection(
+  //     host: mySqlServer,
+  //     port: 3306,
+  //     userName: "kiosk_user",
+  //     password: "Iehbr201010",
+  //     databaseName: "kiosk", // optional
+  //   );
+  //
+  //   await conn.connect();
+  //
+  //   for (var i = 0; i < orderDishes.length; i++){
+  //     await conn.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
+  //         {
+  //           'payment_guid': opGuid,
+  //           'dish_id': orderDishes[i].id,
+  //           'dish_name': orderDishes[i].name,
+  //           'dish_count': orderDishes[i].dishCount,
+  //           'dish_price': orderDishes[i].price,
+  //         });
+  //
+  //     for(var b = 0; b < orderDishes[i].modifiers.length; b++){
+  //       await conn.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
+  //           {
+  //             'payment_guid': opGuid,
+  //             'dish_id': orderDishes[i].modifiers[b].id,
+  //             'dish_name': orderDishes[i].modifiers[b].name,
+  //             'dish_count': orderDishes[i].dishCount,
+  //             'dish_price': orderDishes[i].modifiers[b].price,
+  //           });
+  //     }
+  //   }
+  //
+  //   await conn.close();
+  //   insertLog(opGuid, "Чек распечатан успешно");
+  //
+  // } else {
+  //   insertLog(opGuid, "Ошибка печати чека: " + respBodyOfd['Error']);
+  //   throw ("Ошибка печати чека: " + respBodyOfd['Error']);
+  // }
+  //
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": ">#2#<Спасибо за покупку!",
+  //     "Font": 3,
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "<<->>",
+  //   }
+  // });
+  // checkInfo.add({
+  //   "PrintText": {
+  //     "Text": "<<->>",
+  //   }
+  // });
+  //
+  // // //Распечатать чек
+  // // final String guidCheckPrintSmall = Guid.newGuid.toString();
+  // // Map dataCheckPrintSmall = {
+  // //   'Command': 'PrintDocument',
+  // //   'IdCommand': guidCheckPrintSmall,
+  // //   'NumDevice': numDevicePrinterSmall,
+  // //   'Timeout': 60,
+  // //   'CheckStrings': checkInfo,
+  // // };
+  // //
+  // // var bodyCheckPrintSmall = json.encode(dataCheckPrintSmall);
+  // //
+  // //  http
+  // //     .post(Uri.parse(kkmServerUrl),
+  // //     headers: {"Content-Type": "application/json"},
+  // //     body: bodyCheckPrintSmall);
 
+  insertLog(opGuid, "Номер заказа возвращен для показа гостю $ordNum");
    return ordNum;
 }
 

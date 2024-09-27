@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:bokiosk/controllers/LogController.dart';
 import 'package:bokiosk/models/MenuModel.dart';
 import 'package:bokiosk/models/OrderDishesModel.dart';
 import 'package:bokiosk/pages/AdminPage.dart';
@@ -124,7 +125,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     // initial load
-    _listFuture = getMenus(widget.menuId, '7ae08cea-95e9-4136-a746-ed0fe8077770');
+    _listFuture = getMenus(widget.menuId, iikoOrganizationId);
     startTimer();
     observerController = ListObserverController(controller: scrollController);
 
@@ -879,7 +880,59 @@ class _HomePageState extends State<HomePage> {
                               )
                             );
                           } else if (snapshot.hasError){
-                            return Center(child: Text(snapshot.error.toString(), style: TextStyle(color: Colors.white),));
+                            insertLog("withoutGuid", "Ошибка загрузки меню " + snapshot.error.toString());
+                            return Center(
+                                child: Column(
+                                  children: [
+                                    MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('При загрузке меню возникла ошибка',
+                                        style: TextStyle(fontWeight: FontWeight.w200, fontSize: 35, color: Colors.white, fontFamily: 'Montserrat-ExtraBold', shadows: [
+                                          Shadow(
+                                            offset: Offset(1, 1),
+                                            blurRadius: 5.0,
+                                            color: Color.fromARGB(255, 0, 0, 0),
+                                          ),
+                                        ]))),
+                                    MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('возможно нет связи с сервером',
+                                        style: TextStyle(fontWeight: FontWeight.w200, fontSize: 15, color: Colors.white, fontFamily: 'Montserrat-ExtraBold', shadows: [
+                                          Shadow(
+                                            offset: Offset(1, 1),
+                                            blurRadius: 5.0,
+                                            color: Color.fromARGB(255, 0, 0, 0),
+                                          ),
+                                        ]))),
+                                    SizedBox(height: 150,),
+                                    InkWell(
+                                      onTap: (){
+                                        setState(() {
+                                          _listFuture = getMenus(widget.menuId, iikoOrganizationId);
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 400,
+                                        height: 100,
+                                        padding: EdgeInsets.symmetric(horizontal: 20),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(15),
+                                          border: Border.all(color: Color(0xFFD72314)),
+                                          color: Color(0xFFD72314),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black12,
+                                              spreadRadius: 2,
+                                              blurRadius: 10,
+                                              offset: Offset(0, 0), // changes position of shadow
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('обновить',
+                                            style: TextStyle(fontWeight: FontWeight.w400, fontSize: 55, color: Colors.white, fontFamily: 'Montserrat-ExtraLight'),),),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                )
+                            );
                           } else {
                             return Container(
                               child: Center(child: CircularProgressIndicator(color: Colors.white,),),
