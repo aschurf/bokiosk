@@ -335,8 +335,8 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
         headers: {"Content-Type": "application/json"},
         body: bodyCheckPrint);
 
-    insertLog(opGuid, "Ошибка формирования чека: " + respBodyOfd['Error']);
-    throw ("Ошибка формирования чека: " + respBodyOfd['Error']);
+    insertLog(opGuid, "Ошибка формирования чека, оплата отменена и возвращена: " + respBodyOfd['Error']);
+    throw ("Ошибка формирования чека, оплата отменена и возвращена: " + respBodyOfd['Error']);
   }
 
   Map fisInfo = await getFiscalInfo(respBodyOfd['CheckNumber']);
