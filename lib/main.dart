@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:bokiosk/controllers/LogController.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -72,6 +73,13 @@ void main() async {
 
     await conn.close();
   }
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    //this line prints the default flutter gesture caught exception in console
+    //FlutterError.dumpErrorToConsole(details);
+    insertLog("flutterError", details.exception.toString());
+    insertLog("flutterError", details.stack.toString());
+  };
 
   // PackageInfo packageInfo = await PackageInfo.fromPlatform();
   //
