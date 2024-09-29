@@ -326,7 +326,7 @@ class _ViewOrderState extends State<ViewOrder> {
                     SizedBox(width: 80,),
                     InkWell(
                       onTap: (){
-
+                        _timer.cancel();
                         Navigator.push(
                             context,
                             MaterialPageRoute(
