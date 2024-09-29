@@ -137,41 +137,41 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  // late Timer _timer;
+  late Timer _timer;
   int _start = 120;
 
   void startTimer() {
     const oneSec = const Duration(seconds: 1);
-    // _timer = new Timer.periodic(
-    //   oneSec,
-    //       (Timer timer) {
-    //     print(_start);
-    //     if (_start == 0) {
-    //       setState(() {
-    //         timer.cancel();
-    //       });
-    //       Navigator.pushReplacement(
-    //           context,
-    //           MaterialPageRoute(
-    //               builder: (context) => WelcomePage()
-    //           ));
-    //     } else if(_start == 30) {
-    //       showAlertDialogTimer();
-    //       setState(() {
-    //         _start--;
-    //       });
-    //     } else {
-    //       setState(() {
-    //         _start--;
-    //       });
-    //     }
-    //   },
-    // );
+    _timer = new Timer.periodic(
+      oneSec,
+          (Timer timer) {
+        print(_start);
+        if (_start == 0) {
+          setState(() {
+            timer.cancel();
+          });
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => WelcomePage()
+              ));
+        } else if(_start == 30) {
+          showAlertDialogTimer();
+          setState(() {
+            _start--;
+          });
+        } else {
+          setState(() {
+            _start--;
+          });
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
-    // _timer.cancel();
+    _timer.cancel();
     super.dispose();
   }
 
@@ -187,7 +187,7 @@ class _HomePageState extends State<HomePage> {
                 builder: (context) => WelcomePage()
             ));
         Navigator.pop(context);
-        // _timer.cancel();
+        _timer.cancel();
       },
     );
     Widget continueButton = TextButton(
@@ -232,6 +232,7 @@ class _HomePageState extends State<HomePage> {
     Widget continueButton = TextButton(
       child: Text("Удалить", style: TextStyle(fontSize: 30),),
       onPressed:  () {
+        _timer.cancel();
         orderDishes = [];
         fullSumOrder = 0;
         setState(() {
@@ -318,7 +319,7 @@ class _HomePageState extends State<HomePage> {
                               }
 
                               await conn.close();
-
+                              _timer.cancel();
                               Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
@@ -343,6 +344,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                           InkWell(
                             onTap: () async {
+                              _timer.cancel();
                               Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
@@ -384,7 +386,7 @@ class _HomePageState extends State<HomePage> {
                                       onTap: (){
                                         visibleSection = ind;
                                         setState(() {
-
+                                          _start = 120;
                                         });
                                         observerController.animateTo(
                                           index: ind,
@@ -468,6 +470,9 @@ class _HomePageState extends State<HomePage> {
                                                 num dopPosSum = 0 ;
                                                 return InkWell(
                                                   onTap: (){
+                                                    setState(() {
+                                                      _start = 120;
+                                                    });
                                                     //TODO:модальное окно с описанием блюда и модификаторами
                                                     showDialog(
                                                         context: context,
@@ -536,6 +541,7 @@ class _HomePageState extends State<HomePage> {
                                                                                     return InkWell(
                                                                                       onTap: (){
                                                                                         setState(() {
+                                                                                          _start = 120;
                                                                                           snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems[modifierIndex].isChecked = !snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems[modifierIndex].isChecked;
                                                                                           if(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems[modifierIndex].isChecked){
                                                                                             dopPosSum += snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems[modifierIndex].enuItemSizeModifiersItemPrice[0].price;
@@ -591,6 +597,9 @@ class _HomePageState extends State<HomePage> {
                                                                       right: 0,
                                                                       child: InkWell(
                                                                         onTap: (){
+                                                                          setState(() {
+                                                                            _start = 120;
+                                                                          });
                                                                           if(snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers.length > 0){
                                                                             snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesModifiers[0].menuItemSizeModifiersItems.forEach((element){
                                                                               setState((){
@@ -654,7 +663,9 @@ class _HomePageState extends State<HomePage> {
                                                                                   children: [
                                                                                     InkWell(
                                                                                       onTap: (){
-
+                                                                                        setState(() {
+                                                                                          _start = 120;
+                                                                                        });
                                                                                       },
                                                                                       child: Container(
                                                                                         width: 400,
@@ -679,6 +690,7 @@ class _HomePageState extends State<HomePage> {
                                                                                             InkWell(
                                                                                               onTap: (){
                                                                                                 setState(() {
+                                                                                                  _start = 120;
                                                                                                   if(dishCounter > 1){
                                                                                                     dishCounter--;
                                                                                                   }
@@ -690,6 +702,7 @@ class _HomePageState extends State<HomePage> {
                                                                                             InkWell(
                                                                                               onTap: (){
                                                                                                 setState(() {
+                                                                                                  _start = 120;
                                                                                                   dishCounter++!;
                                                                                                 });
                                                                                               },
@@ -713,6 +726,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           });
                                                                                         }
                                                                                         setState((){
+                                                                                          _start = 120;
                                                                                           orderDishes.add(OrderDishesModel(
                                                                                               name: snapshot.data![groupIndex].items[index].name,
                                                                                               id: snapshot.data![groupIndex].items[index].itemId,
@@ -904,6 +918,7 @@ class _HomePageState extends State<HomePage> {
                                     InkWell(
                                       onTap: (){
                                         setState(() {
+                                          _start = 120;
                                           _listFuture = getMenus(widget.menuId, iikoOrganizationId);
                                         });
                                       },
@@ -951,6 +966,9 @@ class _HomePageState extends State<HomePage> {
               right: 0,
               child: InkWell(
                 onTap: (){
+                  setState(() {
+                    _start = 120;
+                  });
                   showAlertDialog(context);
                 },
                 child: Container(
@@ -978,29 +996,31 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 55, color: Colors.white, fontFamily: 'Montserrat-Regular'),),),
                       InkWell(
                         onTap: (){
+                          _timer.cancel();
                           Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => ViewOrder(orderDishes: orderDishes, typeOrder: widget.typeOrder,)
                               )).then((value){
-                            final data = value as Map<String, Object>;
-                            print(data);
-                            setState(() {
-                              orderDishes = (data['dishesOrder'] as List<OrderDishesModel>?)!;
-                              fullSumOrder = 0;
-                            });
-                            orderDishes.forEach((elementOrder){
-                              fullSumOrder += elementOrder.price * elementOrder.dishCount;
-                              elementOrder.modifiers.forEach((modifierElement){
-                                fullSumOrder += modifierElement.price * elementOrder.dishCount;
+                                  final data = value as Map<String, Object>;
+                                  print(data);
+                                  setState(() {
+                                    orderDishes = (data['dishesOrder'] as List<OrderDishesModel>?)!;
+                                    fullSumOrder = 0;
+                                  });
+                                  orderDishes.forEach((elementOrder){
+                                    fullSumOrder += elementOrder.price * elementOrder.dishCount;
+                                    elementOrder.modifiers.forEach((modifierElement){
+                                      fullSumOrder += modifierElement.price * elementOrder.dishCount;
+                                    });
+                                  });
+
+                                  stater();
+                                  setState(() {
+                                    _start = 120;
+                                  });
+                                  startTimer();
                               });
-                            });
-
-                            stater();
-                            setState(() {
-
-                            });
-                          });
                         },
                         child: Container(
                           width: 400,

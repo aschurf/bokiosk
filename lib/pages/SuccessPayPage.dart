@@ -110,38 +110,38 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 height: 150,
                 child: Center(
-                  child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожалуйста, проходите в зону выдачи заказов.',
+                  child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожалуйста, проходите в зону выдачи заказов и передайте ваш чек повару.',
                     style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
                     ]), textAlign: TextAlign.center,)),
                 )
             ),
           ),
           Positioned(
-            top: 1200,
-            left: 0,
+            top: 950,
+            left: 50,
             child: Container(
-                width: MediaQuery.of(context).size.width * 0.999,
+                width: MediaQuery.of(context).size.width * 0.9,
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                height: 150,
+                margin: EdgeInsets.symmetric(vertical: 20),
+                height: 250,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: Colors.red,
+                ),
                 child: Center(
-                  child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Есть вопросы по работе киоска? - напишите нам!',
-                    style: TextStyle(fontWeight: FontWeight.w200, fontSize: 20, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
-                    ]), textAlign: TextAlign.center,)),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 20,),
+                      MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('передайте ваш чек повару',
+                        style: TextStyle(fontWeight: FontWeight.w200, fontSize: 50, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
+                        ]), textAlign: TextAlign.center,)),
+                      SizedBox(height: 30,),
+                      MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожауйста, передайте ваш чек повару в зоне выдачи или кассиру. В нашем заведении работает живая очередь.',
+                        style: TextStyle(fontWeight: FontWeight.w200, fontSize: 20, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
+                        ]), textAlign: TextAlign.center,)),
+                    ],
+                  )
                 )
-            ),
-          ),
-          Positioned(
-            top: 1400,
-            left: 0,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.999,
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              height: 200,
-              child: Container(
-                width: 300,
-                height: 300,
-                child: Image.asset('assets/images/taplink.png'),
-              ),
             ),
           ),
           Positioned(

@@ -73,6 +73,29 @@ class _PayOrderState extends State<PayOrder> {
     List<Map> checkInfo = [];
     checkInfo.add({
       "PrintText": {
+        "Text": ">#2#<Для ваших отзывов и предложений",
+        "Font": 2,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<напишите нам",
+        "Font": 2,
+      }
+    });
+    checkInfo.add({
+      "BarCode": {
+        "BarcodeType": "QR",
+        "Barcode": "https://taplink.cc/aschurf",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
         "Text": ">#2#<ООО \"БУНБОНАМБО\"",
         "Font": 1,
       }

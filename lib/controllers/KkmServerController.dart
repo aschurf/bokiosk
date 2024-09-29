@@ -494,6 +494,17 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
       "Text": "<<->>",
     }
   });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<ПЕРЕДАЙТЕ ЧЕК ПОВАРУ НА ВЫДАЧЕ",
+      "Font": 1,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
 
 
   //Распечатать чек
