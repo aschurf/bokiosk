@@ -361,7 +361,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
   var sNUmber = await conn.execute('SELECT COUNT(id) as counter FROM payments WHERE session_number = :session_number',
       {
-        'session_number': 22,
+        'session_number': respBodyOfd['SessionNumber'],
       });
 
   String oNumber = "";
@@ -380,6 +380,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   insertLog(opGuid, "Присвоен стартовый номер заказа $ordNum");
   //Отправляю заказ в IIKO
   String iikoOrderId = "";
+  insertLog(opGuid, "Создаю заказ в IIKO на стол");
   await createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
     if(resp.containsKey('orderInfo')){
       iikoOrderId = resp['orderInfo']['id'];
@@ -388,6 +389,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
       int coun = 0;
       while (newOrdNum == "" && coun < 5){
         sleep(Duration(seconds:3));
+        insertLog(opGuid, "Получение номера заказа от IIKO");
         await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
           if(orIikoNumber.containsKey('orders')){
             ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
@@ -396,6 +398,8 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
           } else {
             insertLog(opGuid, "Ошибка получения номера заказа из IIKO, попытка $coun");
           }
+        }).catchError((error) {
+          insertLog(opGuid, "Ошибка получения номера заказа IIKO" + error.toString());
         });
         confirmIikoOrder(iikoOrderId);
         coun++;
@@ -403,9 +407,11 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
     } else {
       insertLog(opGuid, "Ошибка создания заказа на стол");
     }
+  }).catchError((error) {
+    insertLog(opGuid, "Ошибка создания заказа на стол" + error.toString());
   });
 
-  //Распечатать чек возврата
+  //Распечатать чек
   checkInfo.add({
     "PrintText": {
       "Text": clockString,
@@ -524,7 +530,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
       headers: {"Content-Type": "application/json"},
       body: bodyCheckPrint);
 
-  insertLog(opGuid, "Отправка чека на печать на принтер");
+  insertLog(opGuid, "Отправка чека на печать на принтер " + responseCheckPrint.body);
 
   final respBodyCheckPrint = json.decode(responseCheckPrint.body);
   final respBodyYCheckPrint = json.encode(respBodyCheckPrint);

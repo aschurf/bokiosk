@@ -25,8 +25,10 @@ class _WelcomePageState extends State<WelcomePage> {
     final playable = Playlist(
       [
         Media('asset:///assets/videos/1v3.mp4'),
+        Media('asset:///assets/videos/attention2.mp4'),
         Media('asset:///assets/videos/2v3.mp4'),
         Media('asset:///assets/videos/4v3.mp4'),
+        Media('asset:///assets/videos/attention.mp4'),
       ],
     );
 
@@ -43,7 +45,7 @@ class _WelcomePageState extends State<WelcomePage> {
   void st() async {
     await player.setPlaylistMode(PlaylistMode.loop);
     await player.setVolume(0.0);
-    await player.setShuffle(true);
+    await player.setShuffle(false);
   }
 
   @override

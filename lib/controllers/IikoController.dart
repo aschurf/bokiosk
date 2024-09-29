@@ -10,6 +10,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:mysql_client/mysql_client.dart';
 
+import 'LogController.dart';
+
 
 Future<String> getIikoAuth() async {
   //Получить апи токен
@@ -116,8 +118,7 @@ Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumbe
       body: body);
 
 
-  print(response.body);
-
+  insertLog("withoutGuid", "Ответ от IIKO получен " + response.body);
   final respBody = json.decode(response.body);
   return respBody;
 }
@@ -142,7 +143,7 @@ Future<Map> getIikoOrderNumber(String orderId) async {
 
 
   print(response.body);
-
+  insertLog("withoutGuid", "Ответ от IIKO c номером заказа получен " + response.body);
   final respBody = json.decode(response.body);
   return respBody;
 }

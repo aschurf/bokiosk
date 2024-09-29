@@ -281,7 +281,6 @@ class _PayOrderState extends State<PayOrder> {
 
   @override
   void dispose() {
-    _timer.cancel();
     super.dispose();
   }
 
