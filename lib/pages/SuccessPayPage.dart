@@ -23,14 +23,13 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
       oneSec,
           (Timer timer) {
         if (_start == 0) {
-          setState(() {
-            timer.cancel();
-          });
-          Navigator.pushReplacement(
+          _timer.cancel();
+          Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
                   builder: (context) => WelcomePage()
-              ));
+              ),
+                  (Route<dynamic> route) => false);
         } else {
           setState(() {
             _start--;
@@ -157,11 +156,12 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
                   InkWell(
                     onTap: (){
                       _timer.cancel();
-                      Navigator.pushReplacement(
+                      Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
                               builder: (context) => WelcomePage()
-                          ));
+                          ),
+                              (Route<dynamic> route) => false);
                     },
                     child: Container(
                       width: 400,

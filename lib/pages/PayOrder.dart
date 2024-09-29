@@ -52,11 +52,13 @@ class _PayOrderState extends State<PayOrder> {
           setState(() {
             timer.cancel();
           });
-          Navigator.pushReplacement(
+          _timer.cancel();
+          Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
                   builder: (context) => WelcomePage()
-              ));
+              ),
+          (Route<dynamic> route) => false);
         } else {
           setState(() {
             _start--;
@@ -373,11 +375,12 @@ class _PayOrderState extends State<PayOrder> {
                   InkWell(
                     onTap: (){
                       _timer.cancel();
-                      Navigator.push(
+                      Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => WelcomePage()
-                          ));
+                              builder: (context) => PayOrder(orderDishes: widget.orderDishes, typeOrder: widget.typeOrder,)
+                          ),
+                              (Route<dynamic> route) => false);
                     },
                     child: Container(
                       width: 400,

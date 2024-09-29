@@ -93,13 +93,14 @@ class _ViewOrderState extends State<ViewOrder> {
     Widget cancelButton = TextButton(
       child: Text("начать заново", style: TextStyle(fontSize: 30),),
       onPressed:  () {
-        Navigator.pushReplacement(
+        Navigator.pop(context);
+        _timer.cancel();
+        Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
                 builder: (context) => WelcomePage()
-            ));
-        Navigator.pop(context);
-        _timer.cancel();
+            ),
+        (Route<dynamic> route) => false);
       },
     );
     Widget continueButton = TextButton(

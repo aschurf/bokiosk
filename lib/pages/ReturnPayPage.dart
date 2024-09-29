@@ -118,11 +118,12 @@ class _ReturnPayPageState extends State<ReturnPayPage> {
                 children: [
                   InkWell(
                     onTap: () async {
-                      Navigator.pushReplacement(
+                      Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
                               builder: (context) => AdminPage()
-                          ));
+                          ),
+                              (Route<dynamic> route) => false);
                     },
                     child: Container(
                       width: 580,
@@ -147,11 +148,12 @@ class _ReturnPayPageState extends State<ReturnPayPage> {
                   InkWell(
                     onTap: (){
 
-                      Navigator.push(
+                      Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
                               builder: (context) => WelcomePage()
-                          ));
+                          ),
+                              (Route<dynamic> route) => false);
                     },
                     child: Container(
                       width: 400,

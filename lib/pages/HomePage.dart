@@ -181,13 +181,14 @@ class _HomePageState extends State<HomePage> {
     Widget cancelButton = TextButton(
       child: Text("начать заново", style: TextStyle(fontSize: 30),),
       onPressed:  () {
-        Navigator.pushReplacement(
+        Navigator.pop(context);
+        _timer.cancel();
+        Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
                 builder: (context) => WelcomePage()
-            ));
-        Navigator.pop(context);
-        _timer.cancel();
+            ),
+            (Route<dynamic> route) => false);
       },
     );
     Widget continueButton = TextButton(
@@ -347,11 +348,12 @@ class _HomePageState extends State<HomePage> {
                           InkWell(
                             onTap: () async {
                               _timer.cancel();
-                              Navigator.pushReplacement(
+                              Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) => OrderTypeSelect()
-                                  ));
+                                  ),
+                              (Route<dynamic> route) => false);
                             },
                             child: Container(
                               width: 200,

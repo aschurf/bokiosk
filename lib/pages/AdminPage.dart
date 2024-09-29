@@ -284,11 +284,12 @@ class _AdminPageState extends State<AdminPage> {
                     left: 0,
                     child: InkWell(
                       onTap: (){
-                        Navigator.push(
+                        Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => WelcomePage()
-                            ));
+                            ),
+                                (Route<dynamic> route) => false);
                       },
                       child: Container(
                         margin: EdgeInsets.symmetric(horizontal: 50),
