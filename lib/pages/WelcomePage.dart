@@ -51,13 +51,14 @@ class _WelcomePageState extends State<WelcomePage> {
     return GestureDetector(
       onTap: (){
         player.dispose();
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => OrderTypeSelect(),
             transitionDuration: Duration(milliseconds: 500),
             transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
           ),
+          (Route<dynamic> route) => false
         );
       },
       child: Scaffold(

@@ -240,11 +240,13 @@ class _HomePageState extends State<HomePage> {
         });
         stater();
         Navigator.pop(context);
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
                 builder: (context) => WelcomePage()
-            ));
+            ),
+            (Route<dynamic> route) => false
+        );
       },
     );
 
