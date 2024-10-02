@@ -96,7 +96,7 @@ Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumbe
         {
           "paymentTypeKind": "Card",
           "sum": sumOrder,
-          "paymentTypeId": iikoPaymentType,
+          "paymentTypeId": orderType == 1 ? iikoPaymentTypeHere : iikoPaymentTypeTakeAway,
           "isProcessedExternally": true,
           "isFiscalizedExternally": false,
         }

@@ -10,7 +10,8 @@ const iikoTerminalGroupId = "49c5e9b7-a942-4f98-a648-25406c4f9a4e";
 const iikoTableOrderId = "ab405932-5e0a-45e9-9e76-3964fcbad43d";
 const iikoOrderTypeTakeAway = "6b8b3c5a-1e66-4c6a-9a7c-744cc79f9c63";
 const iikoOrderTypeHere = "bbbef4dc-5a02-7ea3-81d3-826f4e8bb3e0";
-const iikoPaymentType = "301f0f47-942c-4860-9060-42b8f2b97cb8";
+const iikoPaymentTypeHere = "301f0f47-942c-4860-9060-42b8f2b97cb8";
+const iikoPaymentTypeTakeAway = "f1844128-df80-466d-8762-0fbe4c67e97d";
 
 const numDeviceKkm = 1;
 const numDevicePrinter = 4;
