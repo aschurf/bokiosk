@@ -109,7 +109,7 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 height: 150,
                 child: Center(
-                  child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожалуйста, проходите в зону выдачи заказов и передайте ваш чек повару.',
+                  child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожалуйста, проходите в зону выдачи заказов.',
                     style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
                     ]), textAlign: TextAlign.center,)),
                 )
@@ -131,11 +131,11 @@ class _SuccessPayPageState extends State<SuccessPayPage> {
                   child: Column(
                     children: [
                       SizedBox(height: 20,),
-                      MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('передайте ваш чек повару',
+                      MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Ожидайте в зоне выдачи заказов',
                         style: TextStyle(fontWeight: FontWeight.w200, fontSize: 50, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
                         ]), textAlign: TextAlign.center,)),
                       SizedBox(height: 30,),
-                      MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожауйста, передайте ваш чек повару в зоне выдачи или кассиру. В нашем заведении работает живая очередь.',
+                      MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Пожауйста, ожидайте ваш заказ в зоне выдачи. Как только ваш заказ будет готов - номер появится на экране электронной очереди.',
                         style: TextStyle(fontWeight: FontWeight.w200, fontSize: 20, color: Color(0xFFD6D5D1), fontFamily: 'Montserrat-ExtraBold', shadows: [
                         ]), textAlign: TextAlign.center,)),
                     ],

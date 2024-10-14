@@ -502,7 +502,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   });
   checkInfo.add({
     "PrintText": {
-      "Text": ">#2#<ПЕРЕДАЙТЕ ЧЕК ПОВАРУ НА ВЫДАЧЕ",
+      "Text": ">#2#<Проходите в зону выдачи",
       "Font": 1,
     }
   });
