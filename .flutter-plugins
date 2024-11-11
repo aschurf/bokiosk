@@ -1,0 +1,24 @@
+# This is a generated file; do not edit or check into version control.
+media_kit_libs_android_video=/Users/user/.pub-cache/hosted/pub.dev/media_kit_libs_android_video-1.3.6/
+media_kit_libs_ios_video=/Users/user/.pub-cache/hosted/pub.dev/media_kit_libs_ios_video-1.1.4/
+media_kit_libs_linux=/Users/user/.pub-cache/hosted/pub.dev/media_kit_libs_linux-1.1.3/
+media_kit_libs_macos_video=/Users/user/.pub-cache/hosted/pub.dev/media_kit_libs_macos_video-1.1.4/
+media_kit_libs_windows_video=/Users/user/.pub-cache/hosted/pub.dev/media_kit_libs_windows_video-1.0.10/
+media_kit_native_event_loop=/Users/user/.pub-cache/hosted/pub.dev/media_kit_native_event_loop-1.0.9/
+media_kit_video=/Users/user/.pub-cache/hosted/pub.dev/media_kit_video-1.2.5/
+package_info_plus=/Users/user/.pub-cache/hosted/pub.dev/package_info_plus-8.0.2/
+path_provider=/Users/user/.pub-cache/hosted/pub.dev/path_provider-2.1.4/
+path_provider_android=/Users/user/.pub-cache/hosted/pub.dev/path_provider_android-2.2.10/
+path_provider_foundation=/Users/user/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.0/
+path_provider_linux=/Users/user/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+path_provider_windows=/Users/user/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+screen_brightness=/Users/user/.pub-cache/hosted/pub.dev/screen_brightness-0.2.2+1/
+screen_brightness_android=/Users/user/.pub-cache/hosted/pub.dev/screen_brightness_android-0.1.0+2/
+screen_brightness_ios=/Users/user/.pub-cache/hosted/pub.dev/screen_brightness_ios-0.1.0/
+screen_brightness_macos=/Users/user/.pub-cache/hosted/pub.dev/screen_brightness_macos-0.1.0+1/
+screen_brightness_windows=/Users/user/.pub-cache/hosted/pub.dev/screen_brightness_windows-0.1.3/
+screen_retriever=/Users/user/.pub-cache/hosted/pub.dev/screen_retriever-0.1.9/
+sqflite=/Users/user/.pub-cache/hosted/pub.dev/sqflite-2.3.3+1/
+volume_controller=/Users/user/.pub-cache/hosted/pub.dev/volume_controller-2.0.8/
+wakelock_plus=/Users/user/.pub-cache/hosted/pub.dev/wakelock_plus-1.2.8/
+window_manager=/Users/user/.pub-cache/hosted/pub.dev/window_manager-0.4.2/
