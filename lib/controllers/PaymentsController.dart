@@ -156,7 +156,7 @@ Future<String> returnPayByCheckNumber(int checkNumber) async {
     });
     checkInfo.add({
       "PrintText": {
-        "Text": "НОМЕР УСТРОЙСТВА <#20#>00001427",
+        "Text": "НОМЕР УСТРОЙСТВА <#20#>$deviceNumber",
         "Font": 3,
       }
     });
@@ -170,13 +170,13 @@ Future<String> returnPayByCheckNumber(int checkNumber) async {
 
     checkInfo.add({
       "PrintText": {
-        "Text": "77-Г.Москва, 115191,Мытная ул,д.74,пав 26",
+        "Text": adressTitle,
         "Font": 3,
       }
     });
     checkInfo.add({
       "PrintText": {
-        "Text": "Место расчетов <#0#>77-Г.Москва, 115191,Мытная ул,д.74,пав 26",
+        "Text": "Место расчетов <#0#>$adressTitle",
         "Font": 3,
       }
     });

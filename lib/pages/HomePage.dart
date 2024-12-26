@@ -46,6 +46,9 @@ Future<List<MenuModel>> getMenus(String menuId, String orgId) async {
       body: body);
 
   print(response.body);
+  if(response.statusCode != 200){
+    logStashSend("Ошибка загрузки меню $menuId " + response.body, "", "");
+  }
 
   return parseGetPayment(response.body);
 }
@@ -731,13 +734,29 @@ class _HomePageState extends State<HomePage> {
                                                                                         }
                                                                                         setState((){
                                                                                           _start = 120;
-                                                                                          orderDishes.add(OrderDishesModel(
-                                                                                              name: snapshot.data![groupIndex].items[index].name,
-                                                                                              id: snapshot.data![groupIndex].items[index].itemId,
-                                                                                              price: snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesPrices[0].price,
-                                                                                              dishCount: dishCounter,
-                                                                                              imageUrl: snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl,
-                                                                                              modifiers: modifiersModel));
+                                                                                          if(snapshot.data![groupIndex].items[index].outerEanCode){
+                                                                                            print("Товар с честным знаком");
+                                                                                            for (int i = 0; i < dishCounter; i++) {
+                                                                                              orderDishes.add(OrderDishesModel(
+                                                                                                  name: snapshot.data![groupIndex].items[index].name,
+                                                                                                  id: snapshot.data![groupIndex].items[index].itemId,
+                                                                                                  price: snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesPrices[0].price,
+                                                                                                  dishCount: 1,
+                                                                                                  isMark: true,
+                                                                                                  imageUrl: snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl,
+                                                                                                  modifiers: modifiersModel));
+                                                                                            }
+                                                                                          } else {
+                                                                                            print("Товар БЕЗ честным знаком");
+                                                                                            orderDishes.add(OrderDishesModel(
+                                                                                                name: snapshot.data![groupIndex].items[index].name,
+                                                                                                id: snapshot.data![groupIndex].items[index].itemId,
+                                                                                                price: snapshot.data![groupIndex].items[index].itemSizes[0].itemSizesPrices[0].price,
+                                                                                                dishCount: dishCounter,
+                                                                                                isMark: false,
+                                                                                                imageUrl: snapshot.data![groupIndex].items[index].itemSizes[0].buttonImageUrl,
+                                                                                                modifiers: modifiersModel));
+                                                                                          }
                                                                                           fullSumOrder = 0;
                                                                                         });
 

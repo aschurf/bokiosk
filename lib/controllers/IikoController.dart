@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:mysql_client/mysql_client.dart';
 
+import '../models/IikoLocalDishesModel.dart';
 import 'LogController.dart';
 
 
@@ -29,6 +30,7 @@ Future<String> getIikoAuth() async {
       body: body);
 
   final respBody = json.decode(response.body);
+  logStashSend("Получение токена " + response.body, "", "");
 
   return respBody['token'];
 }
@@ -43,10 +45,12 @@ Future<void> confirmIikoOrder (String orderId) async {
   };
 
   var body = json.encode(data);
-  http
+  final response = await http
       .post(Uri.parse('https://api-ru.iiko.services/api/1/order/close'),
       headers: {"Content-Type": "application/json", "Authorization": "Bearer " + token},
       body: body);
+
+  logStashSend("Подтверждение заказа в IIKO " + response.body, "", "");
 
 
 }
@@ -94,7 +98,7 @@ Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumbe
       },
       "payments": [
         {
-          "paymentTypeKind": "Card",
+          "paymentTypeKind": "Card", 
           "sum": sumOrder,
           "paymentTypeId": orderType == 1 ? iikoPaymentTypeHere : iikoPaymentTypeTakeAway,
           "isProcessedExternally": true,
@@ -119,6 +123,74 @@ Future<Map> createOrderTerminal(List<OrderDishesModel> dishes, String checkNumbe
 
 
   insertLog("withoutGuid", "Ответ от IIKO получен " + response.body);
+  final respBody = json.decode(response.body);
+  return respBody;
+}
+
+
+Future<Map> createOrderTerminalLocal(List<OrderDishesModel> dishes, String checkNumber, int sumOrder, int orderType) async {
+
+  List<Iikolocaldishesmodel> iikoDishes = [];
+
+  for (var element in dishes) {
+    List<iikoLocalDishesModifiersModel> dishModifiers = [];
+    for (var modifier in element.modifiers) {
+      dishModifiers.add(iikoLocalDishesModifiersModel(
+          id: modifier.id,
+      ));
+    }
+
+    iikoDishes.add(Iikolocaldishesmodel(
+        id: element.id,
+        dishCount: element.dishCount.toInt(),
+        isMark: element.isMark,
+        modifiers: dishModifiers
+    ));
+  }
+
+  Map data = {
+    'organizationId': iikoOrganizationId,
+    'terminalGroupId': iikoTerminalGroupId,
+    'order': {
+      "externalNumber": checkNumber,
+      "tableIds" : [
+        iikoTableOrderId
+      ],
+      "items": iikoDishes,
+      "phone": "+79269484308",
+      'orderTypeId': orderType == 1 ? iikoOrderTypeHere : iikoOrderTypeTakeAway,
+      "customer": {
+        "name": "Alex",
+        "type": "one-time"
+      },
+      "payments": [
+        {
+          "paymentTypeKind": "Card",
+          "sum": sumOrder,
+          "paymentTypeId": orderType == 1 ? iikoPaymentTypeHere : iikoPaymentTypeTakeAway,
+          "isProcessedExternally": true,
+          "isFiscalizedExternally": false,
+        }
+      ],
+    },
+    "createOrderSettings": {
+      "servicePrint": false,
+      "transportToFrontTimeout": 0,
+      "checkStopList": false
+    }
+  };
+
+
+  var body = json.encode(data);
+  print(body);
+  final response = await http
+      .post(Uri.parse(iikoLocalAdress),
+      body: body);
+
+
+  insertLog("withoutGuid", "Ответ от IIKO Local получен " + response.body);
+  logStashSend("Ответ от IIKO Local получен " + response.body, "", "");
+
   final respBody = json.decode(response.body);
   return respBody;
 }

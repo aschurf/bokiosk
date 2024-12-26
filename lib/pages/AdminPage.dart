@@ -178,7 +178,7 @@ class _AdminPageState extends State<AdminPage> {
                           ],
                         ),
                         child: Center(
-                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Закрыть смену',
+                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Закрыть смену Z-отчет',
                               style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
                               ]))),
                         ),
@@ -209,15 +209,48 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                   ),
                   Positioned(
-                    top: 800,
+                      top: 800,
+                      left: 0,
+                      child: InkWell(
+                        onTap: (){
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Historypayments()
+                              ));
+                        },
+                        child: Container(
+                          margin: EdgeInsets.symmetric(horizontal: 50),
+                          width: 950,
+                          height: 100,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Color(0xFF54534F)),
+                            color: Color(0xFF54534F),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                spreadRadius: 2,
+                                blurRadius: 10,
+                                offset: Offset(0, 0), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Возврат чека',
+                                style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
+                                ]))),
+                          ),
+                        ),
+                      )
+                  ),
+                  Positioned(
+                    top: 950,
                     left: 0,
                     child: InkWell(
-                      onTap: (){
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Historypayments()
-                            ));
+                      onTap: () async {
+                        await printXReport();
                       },
                       child: Container(
                         margin: EdgeInsets.symmetric(horizontal: 50),
@@ -238,7 +271,7 @@ class _AdminPageState extends State<AdminPage> {
                           ],
                         ),
                         child: Center(
-                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('Возврат чека',
+                          child: MediaQuery(data: MediaQuery.of(context).copyWith(textScaleFactor: 1), child: Text('X-отчет',
                               style: TextStyle(fontWeight: FontWeight.w200, fontSize: 30, color: Colors.white, fontFamily: 'Montserrat-Medium', shadows: [
                               ]))),
                         ),
@@ -246,7 +279,7 @@ class _AdminPageState extends State<AdminPage> {
                     )
                   ),
                   Positioned(
-                    top: 950,
+                    top: 1100,
                     left: 0,
                     child: InkWell(
                       onTap: () async {

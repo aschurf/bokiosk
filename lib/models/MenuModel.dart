@@ -33,19 +33,23 @@ class MenuItemModel {
   String name;
   String description;
   String itemId;
+  bool outerEanCode;
   bool stopList;
   num count;
   List<MenuItemSize> itemSizes;
   List<Labels> labels;
+  List<Tags> tags;
 
   MenuItemModel({
     required this.sku,
     required this.name,
     required this.description,
     required this.itemId,
+    required this.outerEanCode,
     required this.stopList,
     required this.count,
     required this.itemSizes,
+    required this.tags,
     required this.labels,
   });
 
@@ -56,6 +60,14 @@ class MenuItemModel {
       result.forEach((element) {
         print(element);
         itemSizes.add(MenuItemSize.fromJson(element));
+      });
+    }
+
+    List<Tags> tagsItems = <Tags>[];
+    if (json['tags'] != null) {
+      List resultLabels = json['tags'];
+      resultLabels.forEach((element) {
+        tagsItems.add(Tags.fromJson(element));
       });
     }
 
@@ -72,10 +84,12 @@ class MenuItemModel {
       name: json['name'],
       description: json['description'],
       itemId: json['itemId'],
+      outerEanCode: json['outerEanCode'] != null ? true : false,
       stopList: json['stopList'],
       count: json['count'],
       itemSizes: itemSizes,
       labels: labelsItems,
+      tags: tagsItems,
     );
 
   }
@@ -91,6 +105,21 @@ class Labels {
 
   factory Labels.fromJson(Map<String, dynamic> json) {
     return Labels(
+      name: json['name'],
+    );
+
+  }
+}
+
+class Tags {
+  String name;
+
+  Tags({
+    required this.name
+  });
+
+  factory Tags.fromJson(Map<String, dynamic> json) {
+    return Tags(
       name: json['name'],
     );
 

@@ -272,7 +272,11 @@ class _ViewOrderState extends State<ViewOrder> {
                                     InkWell(
                                       onTap: (){
                                         setState(() {
-                                          widget.orderDishes[dishIndex].dishCount++!;
+                                          if(widget.orderDishes[dishIndex].isMark){
+                                            widget.orderDishes.add(widget.orderDishes[dishIndex]);
+                                          } else {
+                                            widget.orderDishes[dishIndex].dishCount++!;
+                                          }
                                         });
                                         reSum(context);
                                       },

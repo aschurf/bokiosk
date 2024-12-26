@@ -1,8 +1,20 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:bokiosk/pages/HomePage.dart';
 import 'package:bokiosk/pages/OrderTypeSelect.dart';
+import 'package:bokiosk/pages/ViewAppUpdate.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+
+import '../constants.dart';
+import '../controllers/LogController.dart';
+import '../controllers/updatesController.dart';
+
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({Key? key}) : super(key: key);
@@ -45,6 +57,25 @@ class _WelcomePageState extends State<WelcomePage> {
     await player.setPlaylistMode(PlaylistMode.loop);
     await player.setVolume(0.0);
     await player.setShuffle(false);
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    logStashSend("Переменная isIikoLocal" + isIikoLocal.toString(), "", "");
+    logStashSend("Переменная iikoLocalAdress" + iikoLocalAdress, "", "");
+    logStashSend("Переменная iikoLocalAdress" + iikoLocalAdress, "", "");
+    logStashSend("Переменная isReadyForUpdate" + isReadyForUpdate.toString(), "", "");
+    String ver = packageInfo.version;
+
+    Map version = await checkUpdates();
+    if(version.containsKey('version') && version['version'] != ver && isReadyForUpdate == true){
+      Navigator.pushAndRemoveUntil(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => ViewAppUpdate(versionApp: version['version'], versionDescription: version),
+            transitionDuration: Duration(milliseconds: 500),
+            transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+          ),
+              (Route<dynamic> route) => false
+      );
+    }
   }
 
   @override

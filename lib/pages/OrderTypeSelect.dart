@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bokiosk/pages/HomePage.dart';
 import 'package:flutter/material.dart';
 
+import '../constants.dart';
 import 'WelcomePage.dart';
 
 class OrderTypeSelect extends StatefulWidget {
@@ -162,7 +163,7 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => HomePage(menuId: '31481', typeOrder: 1,)
+                                builder: (context) => HomePage(menuId: iikoMenuId, typeOrder: 1,)
                             ));
                       },
                       child: Container(
@@ -185,7 +186,7 @@ class _OrderTypeSelectState extends State<OrderTypeSelect> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => HomePage(menuId: '32661', typeOrder: 2,)
+                                builder: (context) => HomePage(menuId: iikoMenuTakeAwayId, typeOrder: 2,)
                             ));
                       },
                       child: Container(

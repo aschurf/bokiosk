@@ -4,6 +4,7 @@ class OrderDishesModel{
   num price;
   num dishCount;
   String imageUrl;
+  bool isMark;
   List<OrderDishesModifiersModel> modifiers;
 
   OrderDishesModel({
@@ -12,6 +13,7 @@ class OrderDishesModel{
     required this.price,
     required this.dishCount,
     required this.imageUrl,
+    required this.isMark,
     required this.modifiers,
   });
 

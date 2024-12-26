@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:bokiosk/controllers/IikoController.dart';
 import 'package:bokiosk/controllers/LogController.dart';
+import 'package:bokiosk/opsgenie/opsgenieIncident.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_guid/flutter_guid.dart';
 import 'dart:async';
@@ -11,6 +12,7 @@ import 'package:mysql_client/mysql_client.dart';
 
 import '../constants.dart';
 import '../models/OrderDishesModel.dart';
+import 'PaymentsController.dart';
 
 
 Future<Map> getFiscalInfo(int checkNumber) async {
@@ -215,6 +217,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
     'NumDevice': numDeviceEkvaring,
     'Amount': sumOrd,
   };
+  logStashSend("Новая оплата " + sumOrd.toString(), "", opGuid);
 
   var body = json.encode(data);
 
@@ -226,8 +229,8 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
       body: body);
 
   final respBody = json.decode(response.body);
+  logStashSend(response.body, "", opGuid);
   final respBodyY = json.encode(respBody);
-  print(respBodyY);
 
   if(respBody['Error'] == ""){
     //ОПлата прошла успешно
@@ -245,9 +248,9 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
     await conn.close();
 
-    insertLog(opGuid, "Оплата по банку прошла успешно");
+    logStashSend("Оплата по банку прошла успешно", "", opGuid);
   } else {
-    insertLog(opGuid, "Оплата по банку завершилась ошибкой " + respBody['Error']);
+    logStashSend("Оплата по банку завершилась ошибкой " + respBody['Error'], "", opGuid);
     throw('Ошибка оплаты: ' + respBody['Error']);
   }
 
@@ -292,6 +295,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
       body: bodyOfd);
 
   final respBodyOfd = json.decode(responseOfd.body);
+  logStashSend("Регистрация в ОФД " + responseOfd.body, "", opGuid);
   final respBodyYOfd = json.encode(respBodyOfd);
 
   if(respBodyOfd['Error'] == ""){
@@ -317,7 +321,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
     await conn.close();
 
-    insertLog(opGuid, "Регистрация чека в ОФД прошла успешно");
+    logStashSend("Регистрация чека в ОФД прошла успешно", "", opGuid);
   } else {
     final String guidRetPay = Guid.newGuid.toString();
     Map dataCheckPrint = {
@@ -335,7 +339,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
         headers: {"Content-Type": "application/json"},
         body: bodyCheckPrint);
 
-    insertLog(opGuid, "Ошибка формирования чека, оплата отменена и возвращена: " + respBodyOfd['Error']);
+    logStashSend("Ошибка формирования чека " + respBodyOfd['Error'], "", opGuid);
     throw ("Ошибка формирования чека, оплата отменена и возвращена: " + respBodyOfd['Error']);
   }
 
@@ -345,8 +349,6 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   final format = DateFormat('dd.MM.yy H:m');
   final clockString = format.format(dateTime);
 
-  print("Дата время фискального чека");
-  print(clockString);
 
   //Сделать номер заказа
   final conn = await MySQLConnection.createConnection(
@@ -377,40 +379,187 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   } else {
     ordNum = "T-" + oNumber;
   }
-  insertLog(opGuid, "Присвоен стартовый номер заказа $ordNum");
+
+  logStashSend("Присвоен стартовый номер заказа $ordNum", ordNum, opGuid);
   //Отправляю заказ в IIKO
   String iikoOrderId = "";
-  insertLog(opGuid, "Создаю заказ в IIKO на стол");
-  await createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
-    if(resp.containsKey('orderInfo')){
-      iikoOrderId = resp['orderInfo']['id'];
-      print("ID заказа IIKO = $iikoOrderId");
+  logStashSend("Создаю заказ в IIKO на стол", ordNum, opGuid);
+  String error = "";
+
+  if(isIikoLocal == true){
+    logStashSend("Создание заказа в Айко локально", ordNum, opGuid);
+    //Создание локального заказа IIKO через Плагин
+    await createOrderTerminalLocal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
+      if(resp.containsKey('success')){
+        if(resp['success'] == true){
+          ordNum = resp['orderId'].toString();
+          logStashSend("Присвоен IIKO номер заказа $ordNum, iiko локально", ordNum, opGuid);
+        } else {
+          String errMsg = resp['error'];
+          logStashSend("Ошибка создания заказа в IIKO локально $errMsg", ordNum, opGuid);
+        }
+      } else {
+        logStashSend("Ошибка создания заказа на стол", ordNum, opGuid);
+      }
+    }).catchError((error) {
+      logStashSend("Ошибка создания заказа на стол" + error.toString(), ordNum, opGuid);
+    });
+  } else {
+    logStashSend("Создание заказа в Айко через Транспорт", ordNum, opGuid);
+    //Создание обычного заказа в стол через TransportApi
+    await createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
+      if(resp.containsKey('orderInfo')){
+        iikoOrderId = resp['orderInfo']['id'];
+        logStashSend("ID заказа IIKO = $iikoOrderId", ordNum, opGuid);
+        String newOrdNum = "";
+        int coun = 0;
+        while (newOrdNum == "" && coun < 5){
+          sleep(Duration(seconds:3));
+          logStashSend("Получение номера заказа от IIKO", ordNum, opGuid);
+          await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
+            insertLog(opGuid, orIikoNumber.toString());
+            if(orIikoNumber.containsKey('orders') && orIikoNumber['orders'][0]['order'] != null){
+              ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
+              newOrdNum = orIikoNumber['orders'][0]['order']['number'].toString();
+              logStashSend("Присвоен IIKO номер заказа $ordNum, попытка $coun", ordNum, opGuid);
+            } else {
+              logStashSend("Ошибка получения номера заказа из IIKO, попытка $coun", ordNum, opGuid);
+            }
+          }).catchError((error) {
+            logStashSend("Ошибка получения номера заказа IIKO" + error.toString(), ordNum, opGuid);
+            error = error.toString();
+          });
+          logStashSend("Подтверждение заказа в IIKO $iikoOrderId", ordNum, opGuid);
+          confirmIikoOrder(iikoOrderId);
+          coun++;
+        }
+      } else {
+        logStashSend("Ошибка создания заказа на стол", ordNum, opGuid);
+      }
+    }).catchError((error) {
+      logStashSend("Ошибка создания заказа на стол" + error.toString(), ordNum, opGuid);
+    });
+  }
+
+
+  final con = await MySQLConnection.createConnection(
+    host: mySqlServer,
+    port: 3306,
+    userName: "kiosk_user",
+    password: "Iehbr201010",
+    databaseName: "kiosk", // optional
+  );
+
+  await con.connect();
+
+  for (var i = 0; i < orderDishes.length; i++){
+    await con.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
+        {
+          'payment_guid': opGuid,
+          'dish_id': orderDishes[i].id,
+          'dish_name': orderDishes[i].name,
+          'dish_count': orderDishes[i].dishCount,
+          'dish_price': orderDishes[i].price,
+        });
+
+    for(var b = 0; b < orderDishes[i].modifiers.length; b++){
+      await con.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
+          {
+            'payment_guid': opGuid,
+            'dish_id': orderDishes[i].modifiers[b].id,
+            'dish_name': orderDishes[i].modifiers[b].name,
+            'dish_count': orderDishes[i].dishCount,
+            'dish_price': orderDishes[i].modifiers[b].price,
+          });
+    }
+  }
+
+  await con.close();
+
+  if(ordNum.contains("H") || ordNum.contains("T") || ordNum.contains("Н") || ordNum.contains("Т")){
+    logStashSend("5 попыток получения номера заказа завершились неудачей, номер заказа не получен. Сгенерированный номер $ordNum. $adressTitle", ordNum, opGuid);
+
+    //Номер заказа не получен от IIKO
+    Map details = {};
+    details = {
+      "error": error,
+      "orderId": opGuid
+    };
+    sendIncident(
+        "Не получен номер заказа от IIKO",
+        "5 попыток получения номера заказа завершились неудачей, номер заказа не получен. Сгенерированный номер $ordNum. $adressTitle",
+        "P3",
+        deviceNumber,
+        details
+    );
+
+    sleep(Duration(seconds:3));
+    logStashSend("Присвоен стартовый номер заказа $ordNum", ordNum, opGuid);
+    //Отправляю заказ в IIKO
+    logStashSend("Создаю заказ в IIKO на стол ВТОРАЯ ПОПЫТКА", ordNum, opGuid);
+
+    if(iikoOrderId != ""){
+      //Заказ был отправлен, но есть проблема с получением номера
       String newOrdNum = "";
+      logStashSend("Заказ был отправлен, но есть проблема с получением номера, ID заказа IIKO = $iikoOrderId", ordNum, opGuid);
       int coun = 0;
       while (newOrdNum == "" && coun < 5){
-        sleep(Duration(seconds:3));
-        insertLog(opGuid, "Получение номера заказа от IIKO");
-        await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
-          if(orIikoNumber.containsKey('orders')){
+        sleep(Duration(seconds:2));
+        logStashSend("Получение номера заказа от IIKO", ordNum, opGuid);
+        await getIikoOrderNumber(iikoOrderId).then((orIikoNumber) async {
+          insertLog(opGuid, orIikoNumber.toString());
+          if(orIikoNumber.containsKey('orders') && orIikoNumber['orders'][0]['order'] != null){
             ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
             newOrdNum = orIikoNumber['orders'][0]['order']['number'].toString();
-            insertLog(opGuid, "Присвоен IIKO номер заказа $ordNum, попытка $coun");
+            logStashSend("Присвоен IIKO номер заказа $ordNum, попытка $coun", ordNum, opGuid);
           } else {
-            insertLog(opGuid, "Ошибка получения номера заказа из IIKO, попытка $coun");
+            logStashSend("Ошибка получения номера заказа из IIKO, попытка $coun", ordNum, opGuid);
           }
         }).catchError((error) {
-          insertLog(opGuid, "Ошибка получения номера заказа IIKO" + error.toString());
+          logStashSend("Ошибка получения номера заказа IIKO" + error.toString(), ordNum, opGuid);
+          error = error.toString();
         });
+        logStashSend("Подтверждение заказа в IIKO $iikoOrderId", ordNum, opGuid);
         confirmIikoOrder(iikoOrderId);
         coun++;
       }
     } else {
-      insertLog(opGuid, "Ошибка создания заказа на стол");
+      logStashSend("Не получен ID заказа из Айко, пробую еще раз", ordNum, opGuid);
+      await createOrderTerminal(orderDishes, ordNum, sumOrd.toInt(), orderType).then((resp) async {
+        if(resp.containsKey('orderInfo')){
+          iikoOrderId = resp['orderInfo']['id'];
+          logStashSend("ID заказа IIKO = $iikoOrderId", ordNum, opGuid);
+          String newOrdNum = "";
+          int coun = 0;
+          while (newOrdNum == "" && coun < 5){
+            sleep(Duration(seconds:3));
+            logStashSend("Получение номера заказа от IIKO", ordNum, opGuid);
+            await getIikoOrderNumber(resp['orderInfo']['id']).then((orIikoNumber) async {
+              insertLog(opGuid, orIikoNumber.toString());
+              if(orIikoNumber.containsKey('orders') && orIikoNumber['orders'][0]['order'] != null){
+                ordNum = orIikoNumber['orders'][0]['order']['number'].toString();
+                newOrdNum = orIikoNumber['orders'][0]['order']['number'].toString();
+                logStashSend("Присвоен IIKO номер заказа $ordNum, попытка $coun", ordNum, opGuid);
+              } else {
+                logStashSend("Ошибка получения номера заказа из IIKO, попытка $coun", ordNum, opGuid);
+              }
+            }).catchError((error) {
+              logStashSend("Ошибка получения номера заказа IIKO" + error.toString(), ordNum, opGuid);
+              error = error.toString();
+            });
+            logStashSend("Подтверждение заказа в IIKO $iikoOrderId", ordNum, opGuid);
+            confirmIikoOrder(iikoOrderId);
+            coun++;
+          }
+        } else {
+          logStashSend("Ошибка создания заказа на стол", ordNum, opGuid);
+        }
+      }).catchError((error) {
+        logStashSend("Ошибка создания заказа на стол" + error.toString(), ordNum, opGuid);
+      });
     }
-  }).catchError((error) {
-    insertLog(opGuid, "Ошибка создания заказа на стол" + error.toString());
-  });
 
+  }
   //Распечатать чек
   checkInfo.add({
     "PrintText": {
@@ -530,7 +679,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
       headers: {"Content-Type": "application/json"},
       body: bodyCheckPrint);
 
-  insertLog(opGuid, "Отправка чека на печать на принтер " + responseCheckPrint.body);
+  logStashSend("Отправка чека на печать на принтер " + responseCheckPrint.body, ordNum, opGuid);
 
   final respBodyCheckPrint = json.decode(responseCheckPrint.body);
   final respBodyYCheckPrint = json.encode(respBodyCheckPrint);
@@ -538,43 +687,9 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
 
 
   if(respBodyCheckPrint['Error'] == ""){
-    final conn = await MySQLConnection.createConnection(
-      host: mySqlServer,
-      port: 3306,
-      userName: "kiosk_user",
-      password: "Iehbr201010",
-      databaseName: "kiosk", // optional
-    );
-
-    await conn.connect();
-
-    for (var i = 0; i < orderDishes.length; i++){
-      await conn.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
-          {
-            'payment_guid': opGuid,
-            'dish_id': orderDishes[i].id,
-            'dish_name': orderDishes[i].name,
-            'dish_count': orderDishes[i].dishCount,
-            'dish_price': orderDishes[i].price,
-          });
-
-      for(var b = 0; b < orderDishes[i].modifiers.length; b++){
-        await conn.execute('INSERT INTO payments_dishes (payment_guid, dish_id, dish_name, dish_count, dish_price) VALUES (:payment_guid, :dish_id, :dish_name, :dish_count, :dish_price)',
-            {
-              'payment_guid': opGuid,
-              'dish_id': orderDishes[i].modifiers[b].id,
-              'dish_name': orderDishes[i].modifiers[b].name,
-              'dish_count': orderDishes[i].dishCount,
-              'dish_price': orderDishes[i].modifiers[b].price,
-            });
-      }
-    }
-
-    await conn.close();
-    insertLog(opGuid, "Чек распечатан успешно");
-
+    logStashSend("Чек распечатан успешно", ordNum, opGuid);
   } else {
-    insertLog(opGuid, "Ошибка печати чека: " + respBodyOfd['Error']);
+    logStashSend("Ошибка печати чека: " + respBodyOfd['Error'], ordNum, opGuid);
     throw ("Ошибка печати чека: " + respBodyOfd['Error']);
   }
 
@@ -612,7 +727,7 @@ Future<String> PayAndRegister(List<Map> checkStrings, List<Map> checkInfo, num s
   //     headers: {"Content-Type": "application/json"},
   //     body: bodyCheckPrintSmall);
 
-  insertLog(opGuid, "Номер заказа возвращен для показа гостю $ordNum");
+  logStashSend("Номер заказа возвращен для показа гостю $ordNum", ordNum, opGuid);
    return ordNum;
 }
 
@@ -700,8 +815,8 @@ Future<String> OpenShift() async {
       headers: {"Content-Type": "application/json"},
       body: body);
 
-  print(response.body);
 
+  logStashSend("Открытие смены, код доступа " + response.body, "", "");
 
   final conn = await MySQLConnection.createConnection(
     host: mySqlServer,
@@ -718,7 +833,9 @@ Future<String> OpenShift() async {
   await conn.connect();
 
   Random random = new Random();
-  int randomNumber = random.nextInt(9999);
+  int randomNumber = 1000 + random.nextInt(9000);
+
+  logStashSend("Открытие смены, код доступа " + randomNumber.toString(), "", "");
 
   await conn.execute('insert into shifts (guid, kkm_command, shift_code, check_number, session_number, qr_code, error, json_req, json_resp) values (:guid, :kkm_command, :shift_code, :check_number, :session_number, :qr_code, :error, :json_req, :json_resp)',
       {
@@ -815,6 +932,7 @@ Future<String> OpenShift() async {
       body: bodyCheckPrint);
 
   final respBodyCheckPrint = json.decode(responseCheckPrint.body);
+  logStashSend("Открытие смены, печать чека " + responseCheckPrint.body, "", "");
   final respBodyYCheckPrint = json.encode(respBodyCheckPrint);
   print(respBodyYCheckPrint);
 
@@ -839,14 +957,18 @@ Future<String> CloseShift() async {
       body: bodyBank);
 
   final respBodyBank = json.decode(responseBank.body);
+  logStashSend("Закрытие смены " + responseBank.body, "", "");
   final respBodyYBank = json.encode(respBodyBank);
   print(respBodyYBank);
 
   if(respBodyBank['Error'] == ""){
 
   } else {
+    logStashSend("Ошибка Закрытие смены " + respBodyBank['Error'], "", "");
     throw("Ошибка возврата платежа " + respBodyBank['Error']);
   }
+
+  await printZReport();
 
 
   final String guid = Guid.newGuid.toString();
@@ -937,4 +1059,669 @@ Future<String> GetDataKKT() async {
   print(response.body);
 
   return response.body;
+}
+
+Future<void> printXReport() async {
+  final String guid = Guid.newGuid.toString();
+  Map data = {
+    'Command': 'GetCounters',
+    'IdCommand': guid,
+    'NumDevice': numDeviceKkm,
+  };
+
+  var body = json.encode(data);
+
+  final response = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: body);
+
+  logStashSend("Печать Х-отчета, ответ ККМ GetСounters " + response.body, "", "");
+  Map respBody = json.decode(response.body);
+
+  String key = "";
+  if(respBody.containsKey('Counters')){
+    key = 'Counters';
+  }
+
+  if(respBody.containsKey('Сounters')){
+    key = 'Сounters';
+  }
+
+  List<Map> checkInfo = [];
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<ООО \"БУНБОНАМБО\"",
+      "Font": 1,
+    }
+  });
+
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<X-отчет",
+      "Font": 2,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+
+
+  if(respBody['Error'] == ""){
+    print("Подготовка х отчета к печати");
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков <#0#>=" + (respBody[key][4]['Count'] + respBody[key][5]['Count']).toString(),
+        "Font": 3,
+      }
+    });
+
+    print(checkInfo);
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков приходов<#0#>=" + respBody[key][4]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Сумма чеков приходов<#0#>=" + respBody[key][4]['Sum'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Наличными <#0#>=" + respBody[key][4]['Cash'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Банк картами <#0#>=" + respBody[key][4]['ElectronicPayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Предварительных оплат (авансами) <#0#>=" + respBody[key][4]['AdvancePayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Последующих оплат (кредитами) <#0#>=" + respBody[key][4]['Credit'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Другие формы оплаты <#0#>=" + respBody[key][4]['CashProvision'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 20% <#0#>=" + respBody[key][4]['Tax20'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% <#0#>=" + respBody[key][4]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% <#0#>=" + respBody[key][4]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+
+
+    //Возвраты
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков возвр приходов<#0#>=" + respBody[key][5]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Сумма чеков возвр приходов<#0#>=" + respBody[key][5]['Sum'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Наличными возвр <#0#>=" + respBody[key][5]['Cash'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Банк картами возвр <#0#>=" + respBody[key][5]['ElectronicPayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Предварительных оплат (авансами) возвр <#0#>=" + respBody[key][5]['AdvancePayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Последующих оплат (кредитами) возвр <#0#>=" + respBody[key][5]['Credit'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Другие формы оплаты возвр <#0#>=" + respBody[key][5]['CashProvision'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 20% возвр <#0#>=" + respBody[key][5]['Tax20'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% возвр <#0#>=" + respBody[key][5]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% возвр <#0#>=" + respBody[key][5]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+
+
+    //Расходы
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков расх приходов<#0#>=" + respBody[key][6]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Сумма чеков расх приходов<#0#>=" + respBody[key][6]['Sum'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Наличными расх <#0#>=" + respBody[key][6]['Cash'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Банк картами расх <#0#>=" + respBody[key][6]['ElectronicPayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Предварительных оплат (авансами) расх <#0#>=" + respBody[key][6]['AdvancePayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Последующих оплат (кредитами) расх <#0#>=" + respBody[key][6]['Credit'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Другие формы оплаты расх <#0#>=" + respBody[key][6]['CashProvision'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 20% расх <#0#>=" + respBody[key][6]['Tax20'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% расх <#0#>=" + respBody[key][6]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% расх <#0#>=" + respBody[key][6]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+
+    print(checkInfo);
+
+    //Распечатать Отчет
+    final String guidCheckPrint = Guid.newGuid.toString();
+    Map dataCheckPrint = {
+      'Command': 'PrintDocument',
+      'IdCommand': guidCheckPrint,
+      'NumDevice': numDevicePrinter,
+      'Timeout': 60,
+      'CheckStrings': checkInfo,
+    };
+
+    var bodyCheckPrint = json.encode(dataCheckPrint);
+
+    print(bodyCheckPrint);
+
+    final responseCheckPrint = await http
+        .post(Uri.parse(kkmServerUrl),
+        headers: {"Content-Type": "application/json"},
+        body: bodyCheckPrint);
+
+    logStashSend("Печать Х-отчета" + responseCheckPrint.body, "", "");
+  } else {
+    logStashSend("Ошибка печати Х-отчета " + respBody['Error'], "", "");
+  }
+
+
+}
+
+Future<void> printZReport() async {
+  var kk = await GetDataKKT();
+  var js = json.decode(kk);
+
+  final String guid = Guid.newGuid.toString();
+  Map data = {
+    'Command': 'GetCounters',
+    'IdCommand': guid,
+    'NumDevice': numDeviceKkm,
+  };
+
+  var body = json.encode(data);
+
+  final response = await http
+      .post(Uri.parse(kkmServerUrl),
+      headers: {"Content-Type": "application/json"},
+      body: body);
+
+  logStashSend("Печать Z-отчета, ответ ККМ " + response.body, "", "");
+
+  Map respBody = json.decode(response.body);
+
+  String key = "";
+  if(respBody.containsKey('Counters')){
+    key = 'Counters';
+  }
+
+  if(respBody.containsKey('Сounters')){
+    key = 'Сounters';
+  }
+
+
+  List<Map> checkInfo = [];
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<ООО \"БУНБОНАМБО\"",
+      "Font": 1,
+    }
+  });
+
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<Z-отчет",
+      "Font": 2,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": ">#2#<Смена №" + js['SessionNumber'].toString(),
+      "Font": 2,
+    }
+  });
+  checkInfo.add({
+    "PrintText": {
+      "Text": "<<->>",
+    }
+  });
+
+  if(respBody['Error'] == ""){
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<Необнуляемая сумма на начало смены",
+        "Font": 2,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Продажи <#0#>=" + respBody[key][0]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Возврат продажи <#0#>=" + respBody[key][1]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Покупка <#0#>=" + respBody[key][2]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Возврат покупка <#0#>=" + respBody[key][3]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+
+
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков приходов<#0#>=" + respBody[key][4]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Сумма чеков приходов<#0#>=" + respBody[key][4]['Sum'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Наличными <#0#>=" + respBody[key][4]['Cash'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Банк картами <#0#>=" + respBody[key][4]['ElectronicPayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Предварительных оплат (авансами) <#0#>=" + respBody[key][4]['AdvancePayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Последующих оплат (кредитами) <#0#>=" + respBody[key][4]['Credit'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Другие формы оплаты <#0#>=" + respBody[key][4]['CashProvision'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 20% <#0#>=" + respBody[key][4]['Tax20'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% <#0#>=" + respBody[key][4]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% <#0#>=" + respBody[key][4]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+
+
+    //Возвраты
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков возвр приходов<#0#>=" + respBody[key][5]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Сумма чеков возвр приходов<#0#>=" + respBody[key][5]['Sum'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Наличными возвр <#0#>=" + respBody[key][5]['Cash'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Банк картами возвр <#0#>=" + respBody[key][5]['ElectronicPayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Предварительных оплат (авансами) возвр <#0#>=" + respBody[key][5]['AdvancePayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Последующих оплат (кредитами) возвр <#0#>=" + respBody[key][5]['Credit'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Другие формы оплаты возвр <#0#>=" + respBody[key][5]['CashProvision'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 20% возвр <#0#>=" + respBody[key][5]['Tax20'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% возвр <#0#>=" + respBody[key][5]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% возвр <#0#>=" + respBody[key][5]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+
+
+    //Расходы
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Количество чеков расх приходов<#0#>=" + respBody[key][6]['Count'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Сумма чеков расх приходов<#0#>=" + respBody[key][6]['Sum'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Наличными расх <#0#>=" + respBody[key][6]['Cash'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Банк картами расх <#0#>=" + respBody[key][6]['ElectronicPayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Предварительных оплат (авансами) расх <#0#>=" + respBody[key][6]['AdvancePayment'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Последующих оплат (кредитами) расх <#0#>=" + respBody[key][6]['Credit'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Другие формы оплаты расх <#0#>=" + respBody[key][6]['CashProvision'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 20% расх <#0#>=" + respBody[key][6]['Tax20'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% расх <#0#>=" + respBody[key][6]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "НДС 10% расх <#0#>=" + respBody[key][6]['Tax10'].toString(),
+        "Font": 3,
+      }
+    });
+
+    //Итоги
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Кол-во чеков за смену <#0#>=" + (respBody[key][4]['Count'] + respBody[key][5]['Count']).toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "Кол-во чеков за весь период <#0#>=" + (respBody[key][0]['Count'] + respBody[key][1]['Count']).toString(),
+        "Font": 3,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": "<<->>",
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<КОНЕЦ ОТЧЕТА",
+        "Font": 2,
+      }
+    });
+    checkInfo.add({
+      "PrintText": {
+        "Text": ">#2#<смена закрыта",
+        "Font": 2,
+      }
+    });
+
+
+    //Распечатать Отчет
+    final String guidCheckPrint = Guid.newGuid.toString();
+    Map dataCheckPrint = {
+      'Command': 'PrintDocument',
+      'IdCommand': guidCheckPrint,
+      'NumDevice': numDevicePrinter,
+      'Timeout': 60,
+      'CheckStrings': checkInfo,
+    };
+
+    var bodyCheckPrint = json.encode(dataCheckPrint);
+
+    final responseCheckPrint = await http
+        .post(Uri.parse(kkmServerUrl),
+        headers: {"Content-Type": "application/json"},
+        body: bodyCheckPrint);
+
+    logStashSend("Печать Z-отчета " + responseCheckPrint.body, "", "");
+  } else {
+    logStashSend("Ошибка печати Z-отчета " + respBody['Error'], "", "");
+  }
+
+
 }
